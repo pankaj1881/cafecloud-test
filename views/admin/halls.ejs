@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hall Management - Cafe Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen">
+    <!-- Global Loading Overlay -->
+    <div id="pageLoadingOverlay" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="text-6xl mb-4 spinner">⚙️</div>
+            <div class="text-2xl font-bold text-white">Loading...</div>
+        </div>
+    </div>
+    <nav class="bg-gray-900 border-b border-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Hall Management</h1>
+            <a href="/admin/dashboard" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-bold">Back to Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold">Hall Management</h1>
+            <button onclick="showAddModal()" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-bold">
+                + Add Hall
+            </button>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <% halls.forEach(hall => { %>
+                <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-2xl font-bold"><%= hall.name %></h3>
+                            <div class="text-gray-400">Capacity: <%= hall.capacity %> people</div>
+                        </div>
+                        <button onclick="toggleHall('<%= hall._id %>')" 
+                            class="<%= hall.isActive ? 'bg-green-600' : 'bg-red-600' %> px-3 py-1 rounded text-sm font-bold">
+                            <%= hall.isActive ? 'Active' : 'Inactive' %>
+                        </button>
+                    </div>
+
+                    <div class="bg-gray-700 rounded-lg p-4 mb-4">
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span>Base Rate:</span>
+                                <span class="font-bold">₹<%= hall.baseRatePerHour %>/hr</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Extension Rate:</span>
+                                <span class="font-bold">₹<%= hall.extensionRatePerHour %>/hr</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="showEditModal('<%= hall._id %>', <%= hall.baseRatePerHour %>, <%= hall.extensionRatePerHour %>)" 
+                            class="flex-1 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-bold">
+                            Edit Rates
+                        </button>
+                        <a href="/admin/halls/delete/<%= hall._id %>" 
+                            onclick="return confirm('Delete this hall?') && showLoading()"
+                            class="flex-1 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-bold text-center">
+                            Delete
+                        </a>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+
+    <!-- Add Hall Modal -->
+    <div id="addModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 class="text-xl font-bold mb-4">Add New Hall</h3>
+            <form action="/admin/halls/add" method="POST">
+                <div class="space-y-3 mb-4">
+                    <div>
+                        <label class="block text-sm mb-1">Hall Name</label>
+                        <input type="text" name="name" required class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">Capacity (people)</label>
+                        <input type="number" name="capacity" required min="1" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">Base Rate per Hour (₹)</label>
+                        <input type="number" name="baseRatePerHour" required min="0" value="5000" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">Extension Rate per Hour (₹)</label>
+                        <input type="number" name="extensionRatePerHour" required min="0" value="6000" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold">
+                        <span class="btn-text">Add Hall</span>
+                        <span class="btn-spinner hidden spinner">⚙️</span>
+                    </button>
+                    <button type="button" onclick="closeModal('addModal')" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg font-bold">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Rates Modal -->
+    <div id="editModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 class="text-xl font-bold mb-4">Edit Rates</h3>
+            <form id="editForm">
+                <input type="hidden" id="editHallId">
+                <div class="space-y-3 mb-4">
+                    <div>
+                        <label class="block text-sm mb-1">Base Rate per Hour (₹)</label>
+                        <input type="number" id="editBaseRate" required min="0" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">Extension Rate per Hour (₹)</label>
+                        <input type="number" id="editExtRate" required min="0" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold">
+                        <span class="btn-text">Update</span>
+                        <span class="btn-spinner hidden spinner">⚙️</span>
+                    </button>
+                    <button type="button" onclick="closeModal('editModal')" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg font-bold">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showAddModal() { document.getElementById('addModal').classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function showEditModal(id, baseRate, extRate) {
+            document.getElementById('editHallId').value = id;
+            document.getElementById('editBaseRate').value = baseRate;
+            document.getElementById('editExtRate').value = extRate;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editHallId').value;
+            const baseRate = document.getElementById('editBaseRate').value;
+            const extRate = document.getElementById('editExtRate').value;
+
+            const res = await fetch(`/admin/halls/update/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ baseRatePerHour: baseRate, extensionRatePerHour: extRate })
+            }).then(r => r.json());
+
+            if (res.success) location.reload();
+        });
+
+        async function toggleHall(id) {
+            document.getElementById('pageLoadingOverlay').classList.remove('hidden');
+            const res = await fetch(`/admin/halls/toggle/${id}`, { method: 'POST' }).then(r => r.json());
+            if (res.success) location.reload();
+        }
+        
+        function showLoading() {
+            document.getElementById('pageLoadingOverlay').classList.remove('hidden');
+            return true;
+        }
+        
+        // Add loading to forms
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('pageLoadingOverlay').classList.add('hidden');
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function() {
+                    const btn = this.querySelector('button[type="submit"]');
+                    if (btn) {
+                        const textSpan = btn.querySelector('.btn-text');
+                        const spinnerSpan = btn.querySelector('.btn-spinner');
+                        if (textSpan && spinnerSpan) {
+                            textSpan.classList.add('hidden');
+                            spinnerSpan.classList.remove('hidden');
+                            btn.disabled = true;
+                        }
+                    }
+                });
+            });
+            
+            document.querySelectorAll('a[href^="/admin/"]:not([href*="logout"])').forEach(link => {
+                link.addEventListener('click', function() {
+                    if (!this.getAttribute('onclick') || !this.getAttribute('onclick').includes('confirm')) {
+                        document.getElementById('pageLoadingOverlay').classList.remove('hidden');
+                    }
+                });
+            });
+        });
+        window.addEventListener('pageshow', function(e) { if (e.persisted) document.getElementById('pageLoadingOverlay').classList.add('hidden'); });
+    </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<nav class="bg-gradient-to-r from-gray-900 via-black to-gray-900 text-white shadow-2xl sticky top-0 z-50 backdrop-blur-lg bg-opacity-95">
+    <div class="px-4 md:px-8 py-5 flex justify-between items-center">
+        <a href="/" class="flex items-center space-x-2 md:space-x-3 text-2xl md:text-3xl font-extrabold group shrink-0">
+            <img src="/images/logo.png" alt="Logo" class="h-8 w-8 md:h-10 md:w-10 object-contain group-hover:scale-110 transition-transform duration-300 mix-blend-screen">
+            <div class="hidden sm:flex items-center space-x-1 md:space-x-2">
+                <span class="text-sky-400 group-hover:text-sky-300 transition-all duration-300">Cafe</span>
+                <span class="text-orange-500 group-hover:text-orange-400 transition-all duration-300">Cloud</span>
+            </div>
+        </a>
+        <div class="flex space-x-2 sm:space-x-3 md:space-x-6 font-semibold text-xs sm:text-sm md:text-lg items-center">
+            <a href="/" class="hover:text-sky-400 transition-all duration-300 whitespace-nowrap md:relative md:after:absolute md:after:bottom-0 md:after:left-0 md:after:w-0 md:after:h-0.5 md:after:bg-sky-400 md:hover:after:w-full md:after:transition-all md:after:duration-300">Home</a>
+            <a href="/menu" class="hover:text-orange-400 transition-all duration-300 whitespace-nowrap md:relative md:after:absolute md:after:bottom-0 md:after:left-0 md:after:w-0 md:after:h-0.5 md:after:bg-orange-400 md:hover:after:w-full md:after:transition-all md:after:duration-300">Menu</a>
+            <a href="/services" class="hover:text-sky-400 transition-all duration-300 whitespace-nowrap md:relative md:after:absolute md:after:bottom-0 md:after:left-0 md:after:w-0 md:after:h-0.5 md:after:bg-sky-400 md:hover:after:w-full md:after:transition-all md:after:duration-300"><span class="hidden md:inline">Our </span>Services</a>
+            <a href="/feedback" class="relative group/feedback">
+                <span class="inline-flex items-center space-x-1 md:space-x-2 px-2 py-1 md:px-4 md:py-2 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full shadow-lg hover:shadow-orange-500/50 transition-all duration-300 hover:scale-105 animate-pulse">
+                    <span class="text-white font-bold whitespace-nowrap"><span class="hidden sm:inline">🎁 </span>Feedback</span>
+                    <span class="hidden lg:inline text-xs bg-yellow-400 text-black px-2 py-0.5 rounded-full font-extrabold">Rewards!</span>
+                </span>
+            </a>
+            <a href="/admin" class="hover:text-sky-400 transition-all duration-300 whitespace-nowrap md:relative md:after:absolute md:after:bottom-0 md:after:left-0 md:after:w-0 md:after:h-0.5 md:after:bg-sky-400 md:hover:after:w-full md:after:transition-all md:after:duration-300">Admin</a>
+        </div>
+        <button id="mobile-menu-btn" class="hidden text-2xl focus:outline-none p-2">
+            <span id="menu-icon">☰</span>
+        </button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden bg-gray-900 px-4 md:px-8 py-4 space-y-3">
+        <a href="/" class="block hover:text-sky-400 transition">Home</a>
+        <a href="/menu" class="block hover:text-orange-400 transition">Menu</a>
+        <a href="/services" class="block hover:text-sky-400 transition">Our Services</a>
+        <a href="/feedback" class="block">
+            <span class="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full">
+                <span class="text-white font-bold">🎁 Feedback</span>
+            </span>
+        </a>
+        <a href="/admin" class="block hover:text-sky-400 transition">Admin</a>
+    </div>
+</nav>
+
+<script>
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuIcon = document.getElementById('menu-icon');
+    mobileMenuBtn?.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+        menuIcon.textContent = mobileMenu.classList.contains('hidden') ? '☰' : '✕';
+    });
+</script>

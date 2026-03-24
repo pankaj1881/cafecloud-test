@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#111827" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="light dark">
+    <title>Order - Table <%= tableNumber %></title>
+    <%- include("./partials/favicon") %>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'media',
+            theme: {
+                extend: {
+                    fontFamily: { fun: ['Nunito', 'sans-serif'] },
+                    colors: {
+                        coral: { 50:'#fff5f2', 100:'#ffe8e0', 400:'#ff8a65', 500:'#FF6B35', 600:'#e85d2a' },
+                        teal:  { 50:'#e8faf8', 100:'#d0f5f0', 400:'#4dd9c0', 500:'#2EC4B6', 600:'#25a99d' },
+                        lemon: { 50:'#fffde7', 100:'#fff9c4', 400:'#fff176', 500:'#FFEE58' },
+                        grape: { 50:'#f3e8ff', 100:'#e9d5ff', 400:'#c084fc', 500:'#a855f7' },
+                        d:     { bg:'#0f172a', card:'#1e293b', surface:'#334155', muted:'#94a3b8' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { 
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+        body { 
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+            font-family: 'Nunito', sans-serif;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #FF6B35 0%, #2EC4B6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .cat-btn-active {
+            background: #FF6B35 !important;
+            color: white !important;
+            border-color: #FF6B35 !important;
+            box-shadow: 0 4px 14px rgba(255,107,53,0.35) !important;
+        }
+        .cat-btn-inactive {
+            background: #f1f5f9 !important;
+            color: #64748b !important;
+            border-color: #e2e8f0 !important;
+        }
+        @media (prefers-color-scheme: dark) {
+            .cat-btn-inactive {
+                background: #1e293b !important;
+                color: #94a3b8 !important;
+                border-color: #334155 !important;
+            }
+        }
+        .filter-scroll {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .filter-scroll::-webkit-scrollbar { display: none; }
+        .menu-item {
+            transition: all 0.25s cubic-bezier(.4,0,.2,1);
+        }
+        .menu-item:active {
+            transform: scale(0.97);
+        }
+        .btn-bounce:active {
+            transform: scale(0.93);
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .menu-item { animation: slideUp 0.35s ease-out both; }
+        .menu-item:nth-child(2) { animation-delay: 0.05s; }
+        .menu-item:nth-child(3) { animation-delay: 0.1s; }
+        .menu-item:nth-child(4) { animation-delay: 0.15s; }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinner { animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes wiggle {
+            0%,100% { transform: rotate(0deg); }
+            25% { transform: rotate(-6deg); }
+            75% { transform: rotate(6deg); }
+        }
+        .logo-wiggle {
+            cursor: pointer;
+            animation: bounce-soft 2s ease-in-out infinite;
+        }
+        .logo-wiggle:active { animation: wiggle 0.4s ease; }
+        @keyframes bounce-soft {
+            0%,100% { transform: translateY(0) scale(1); }
+            30% { transform: translateY(-6px) scale(1.05); }
+            50% { transform: translateY(0) scale(0.97); }
+            70% { transform: translateY(-3px) scale(1.02); }
+        }
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .pop-in { animation: popIn 0.3s cubic-bezier(.4,0,.2,1); }
+        @keyframes float {
+            0%,100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+        .float-anim { animation: float 2s ease-in-out infinite; }
+        .card-shadow {
+            box-shadow: 0 2px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+        }
+        @media (prefers-color-scheme: dark) {
+            .card-shadow {
+                box-shadow: 0 2px 16px rgba(0,0,0,0.3), 0 1px 4px rgba(0,0,0,0.2);
+            }
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-d-bg text-gray-800 dark:text-gray-100 min-h-screen font-fun">
+
+
+<!-- Header -->
+<div class="sticky top-0 z-50 bg-white/90 dark:bg-d-bg/90 backdrop-blur-lg border-b border-gray-100 dark:border-d-surface shadow-sm">
+    <div class="px-4 py-3">
+        <div class="flex justify-between items-center">
+            <div onclick="confirmLeaveToWebsite()" class="logo-wiggle flex items-center gap-2.5">
+                <div class="h-10 w-10 rounded-2xl shadow-md bg-gray-100 dark:bg-white/10 flex items-center justify-center overflow-hidden p-1">
+                    <img src="/images/logo.png" alt="Cafe Logo" class="h-full w-full object-contain">
+                </div>
+            </div>
+            <div class="flex-1 text-center">
+                <h1 class="text-lg font-extrabold text-gray-800 dark:text-gray-100 flex items-center justify-center gap-1.5">
+                    <span class="text-xl float-anim">🍽️</span>
+                    Table <span class="gradient-text"><%= tableNumber %></span>
+                </h1>
+                <% if (existingOrder) { %>
+                    <p class="text-[11px] font-bold text-teal-500 mt-0.5">⚡ Active order — add more!</p>
+                <% } else { %>
+                    <p class="text-[11px] text-gray-400 dark:text-d-muted mt-0.5">What are you craving today?</p>
+                <% } %>
+            </div>
+            <button onclick="toggleCart()" class="relative bg-coral-500 hover:bg-coral-600 w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg shadow-coral-500/30 btn-bounce transition-all">
+                <span class="text-xl">🛒</span>
+                <span id="cartBadge" class="hidden absolute -top-1.5 -right-1.5 bg-teal-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center pop-in shadow-md">0</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Filters -->
+<div class="sticky top-[58px] z-40 bg-white/90 dark:bg-d-bg/90 backdrop-blur-lg border-b border-gray-100 dark:border-d-surface">
+    <!-- Food Type Filters -->
+    <div class="px-4 pt-3 pb-1.5">
+        <div class="flex gap-2 overflow-x-auto filter-scroll pb-1">
+            <button onclick="filterFoodType('all')" id="food-filter-all" data-color="coral" class="food-filter-btn flex-shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap bg-coral-500 text-white shadow-md shadow-coral-500/25 border-2 border-coral-500 transition-all">
+                ✨ All
+            </button>
+            <button onclick="filterFoodType('veg')" id="food-filter-veg" data-color="green" class="food-filter-btn flex-shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap bg-green-50 text-green-600 border-2 border-green-200 transition-all">
+                🟢 Veg
+            </button>
+            <button onclick="filterFoodType('non-veg')" id="food-filter-non-veg" data-color="red" class="food-filter-btn flex-shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap bg-red-50 text-red-500 border-2 border-red-200 transition-all">
+                🔴 Non-Veg
+            </button>
+            <button onclick="filterFoodType('beverage')" id="food-filter-beverage" data-color="yellow" class="food-filter-btn flex-shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap bg-amber-50 text-amber-600 border-2 border-amber-200 transition-all">
+                🥤 Beverages
+            </button>
+            <button onclick="filterFoodType('other')" id="food-filter-other" data-color="gray" class="food-filter-btn flex-shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap bg-gray-50 text-gray-500 border-2 border-gray-200 transition-all">
+                🍽️ Others
+            </button>
+        </div>
+    </div>
+    
+    <!-- Category Filters -->
+    <div class="px-4 pb-2.5">
+        <div class="flex gap-2 overflow-x-auto filter-scroll">
+            <button onclick="filterCategory('', this)" class="category-btn cat-btn-active flex-shrink-0 px-4 py-1.5 rounded-full font-bold text-xs whitespace-nowrap border-2 transition-all">
+                All
+            </button>
+            <% categories.forEach(cat => { %>
+                <button onclick="filterCategory('<%= cat._id %>', this)" class="category-btn cat-btn-inactive flex-shrink-0 px-4 py-1.5 rounded-full font-bold text-xs whitespace-nowrap border-2 transition-all">
+                    <%= cat.name %>
+                </button>
+            <% }); %>
+        </div>
+    </div>
+</div>
+
+
+<!-- Menu Items -->
+<div class="px-4 pt-4 pb-32">
+    <div id="menuGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <% menuItems.forEach(item => { %>
+            <div class="menu-item bg-white dark:bg-d-card rounded-2xl p-4 card-shadow border border-gray-100/80 dark:border-d-surface" 
+                 data-category="<%= item.category._id %>" 
+                 data-food-type="<%= item.foodType || 'veg' %>"
+                 data-id="<%= item._id %>" 
+                 data-name="<%= item.name %>" 
+                 data-price="<%= item.price %>">
+                <div class="flex justify-between items-center gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <% if (item.foodType === 'veg') { %>
+                                <span class="w-4 h-4 rounded-sm border-2 border-green-500 flex items-center justify-center flex-shrink-0"><span class="w-2 h-2 rounded-full bg-green-500"></span></span>
+                            <% } else if (item.foodType === 'non-veg') { %>
+                                <span class="w-4 h-4 rounded-sm border-2 border-red-500 flex items-center justify-center flex-shrink-0"><span class="w-2 h-2 rounded-full bg-red-500"></span></span>
+                            <% } else if (item.foodType === 'beverage') { %>
+                                <span class="w-4 h-4 rounded-sm border-2 border-amber-500 flex items-center justify-center flex-shrink-0"><span class="w-2 h-2 rounded-full bg-amber-500"></span></span>
+                            <% } else if (item.foodType === 'other') { %>
+                                <span class="w-4 h-4 rounded-sm border-2 border-gray-400 flex items-center justify-center flex-shrink-0"><span class="w-2 h-2 rounded-full bg-gray-400"></span></span>
+                            <% } %>
+                            <h3 class="text-[15px] font-extrabold text-gray-800 dark:text-gray-100 truncate"><%= item.name %></h3>
+                        </div>
+                        <p class="text-lg font-black text-coral-500 ml-6">₹<%= item.price %></p>
+                    </div>
+                    <div class="flex items-center gap-1 flex-shrink-0 bg-gray-50 dark:bg-d-surface rounded-2xl p-1">
+                        <button onclick="updateQuantity('<%= item._id %>', -1)" class="w-9 h-9 rounded-xl bg-white dark:bg-d-card text-coral-500 font-black text-lg card-shadow flex items-center justify-center btn-bounce">
+                            −
+                        </button>
+                        <span id="qty-<%= item._id %>" class="text-base font-black w-8 text-center text-gray-800 dark:text-gray-100">0</span>
+                        <button onclick="updateQuantity('<%= item._id %>', 1)" class="w-9 h-9 rounded-xl bg-coral-500 text-white font-black text-lg shadow-md shadow-coral-500/30 flex items-center justify-center btn-bounce">
+                            +
+                        </button>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+</div>
+
+
+<!-- Cart Modal -->
+<div id="cartModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-end justify-center">
+    <div class="bg-white dark:bg-d-bg rounded-t-3xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col" style="animation: slideUp 0.3s ease-out">
+        <!-- Cart Header -->
+        <div class="px-5 pt-5 pb-3 border-b border-gray-100 dark:border-d-surface">
+            <div class="w-10 h-1 bg-gray-200 dark:bg-d-surface rounded-full mx-auto mb-4"></div>
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-black text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                    <span class="text-2xl">🛒</span> Your Cart
+                </h2>
+                <div class="flex gap-2 items-center">
+                    <button onclick="refreshCart()" class="bg-teal-50 dark:bg-teal-500/20 text-teal-600 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-500/30 px-3 py-1.5 rounded-xl font-bold text-xs btn-bounce transition-all">
+                        🔄 Refresh
+                    </button>
+                    <button onclick="toggleCart()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-d-surface text-gray-400 hover:bg-gray-200 dark:hover:bg-d-card flex items-center justify-center text-lg font-bold btn-bounce">&times;</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cart Items -->
+        <div id="cartItems" class="px-5 py-4 overflow-y-auto flex-1">
+        </div>
+
+        <!-- Cart Footer -->
+        <div class="px-5 py-4 border-t border-gray-100 dark:border-d-surface bg-gray-50/50 dark:bg-d-card/50">
+            <div id="cartFooterContent">
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Leave to Website Confirmation Modal -->
+<div id="leaveWebsiteModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-d-bg rounded-3xl max-w-sm w-full p-6 card-shadow" style="animation: slideUp 0.3s ease-out">
+        <div class="text-center mb-4">
+            <div class="w-16 h-16 bg-teal-50 dark:bg-teal-500/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <span class="text-3xl">🌐</span>
+            </div>
+            <h3 class="text-lg font-black text-gray-800 dark:text-gray-100">Visit Our Website?</h3>
+        </div>
+        <div class="bg-gray-50 dark:bg-d-card rounded-2xl p-4 mb-4">
+            <p class="text-sm text-gray-500 dark:text-d-muted text-center mb-3">Opens in a new tab</p>
+            <div class="bg-teal-50 dark:bg-teal-500/20 rounded-xl p-2.5">
+                <p class="text-xs text-teal-600 text-center font-bold flex items-center justify-center gap-1.5">
+                    <span>✅</span> Your cart will be saved
+                </p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="closeLeaveWebsiteModal()" class="flex-1 bg-gray-100 dark:bg-d-surface hover:bg-gray-200 dark:hover:bg-d-card py-3 rounded-2xl font-bold text-sm text-gray-500 dark:text-d-muted btn-bounce transition-all">
+                Stay Here
+            </button>
+            <button onclick="visitWebsite()" class="flex-1 bg-teal-500 hover:bg-teal-600 py-3 rounded-2xl font-bold text-sm text-white shadow-lg shadow-teal-500/30 btn-bounce transition-all">
+                🌐 Visit
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Order Confirmation Modal -->
+<div id="confirmModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-d-bg rounded-3xl max-w-sm w-full p-6 card-shadow" style="animation: slideUp 0.3s ease-out">
+        <div class="text-center mb-4">
+            <div class="w-16 h-16 bg-coral-50 dark:bg-coral-500/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <span class="text-3xl float-anim">🍽️</span>
+            </div>
+            <h3 class="text-lg font-black text-gray-800 dark:text-gray-100">Confirm Order?</h3>
+        </div>
+        <div class="bg-gray-50 dark:bg-d-card rounded-2xl p-4 mb-4 space-y-2.5">
+            <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-400 dark:text-d-muted">Table</span>
+                <span class="font-black text-sm text-gray-800 dark:text-gray-100"><%= tableNumber %></span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-400 dark:text-d-muted">Items</span>
+                <span id="confirmItems" class="font-black text-sm text-coral-500">0</span>
+            </div>
+            <div class="flex justify-between items-center pt-2.5 border-t border-gray-200 dark:border-d-surface">
+                <span class="text-sm font-bold text-gray-600 dark:text-gray-300">Total</span>
+                <span id="confirmTotal" class="text-xl font-black gradient-text">₹0</span>
+            </div>
+        </div>
+        <div class="bg-amber-50 dark:bg-amber-500/20 rounded-xl p-2.5 mb-4">
+            <p class="text-[11px] text-amber-600 dark:text-amber-400 text-center font-bold flex items-center justify-center gap-1.5">
+                <span>⚡</span> Sent to waiter for approval
+            </p>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="closeConfirm()" class="flex-1 bg-gray-100 dark:bg-d-surface hover:bg-gray-200 dark:hover:bg-d-card py-3 rounded-2xl font-bold text-sm text-gray-500 dark:text-d-muted btn-bounce transition-all">
+                Cancel
+            </button>
+            <button onclick="confirmSubmit(this)" class="flex-1 bg-coral-500 hover:bg-coral-600 py-3 rounded-2xl font-bold text-sm text-white shadow-lg shadow-coral-500/30 btn-bounce transition-all">
+                <span class="btn-text">✅ Confirm</span>
+                <span class="btn-spinner hidden spinner">⚙️</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+const tableNumber = <%= tableNumber %>;
+const existingOrderId = '<%= existingOrder ? existingOrder._id : '' %>';
+const sessionToken = '<%= sessionToken || '' %>';
+let cart = [];
+let approvedItems = {}; // Track approved items with their approved quantities
+let currentFoodTypeFilter = 'all';
+let currentCategoryFilter = '';
+
+
+// Load existing order items if any - but don't show them in menu quantities
+<% if (existingOrder) { %>
+    try {
+        const rawItems = <%- JSON.stringify(existingOrder.items.map(item => ({
+            id: item.menuItemId.toString(),
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            approved: item.approved || false
+        }))) %>;
+        
+        // Consolidate items by menuItemId (sum quantities)
+        const itemMap = {};
+        rawItems.forEach(item => {
+            if (itemMap[item.id]) {
+                // Item already exists, add quantity
+                itemMap[item.id].quantity += item.quantity;
+                // If any instance is approved, track it
+                if (item.approved) {
+                    approvedItems[item.id] = (approvedItems[item.id] || 0) + item.quantity;
+                }
+            } else {
+                // New item
+                itemMap[item.id] = { ...item };
+                if (item.approved) {
+                    approvedItems[item.id] = item.quantity;
+                }
+            }
+        });
+        
+        // Convert map to array - these are items already in the order (approved or pending)
+        cart = Object.values(itemMap);
+        
+        // IMPORTANT: Menu quantities should always start at 0
+        // Cart shows what's ordered, menu shows what customer is currently adding
+    } catch(e) {
+        cart = [];
+    }
+<% } %>
+
+
+// Update quantity
+function updateQuantity(itemId, delta) {
+    const item = document.querySelector(`[data-id="${itemId}"]`);
+    const name = item.dataset.name;
+    const price = parseInt(item.dataset.price);
+   
+    // Find if item exists in cart (from previous orders)
+    const existingCartItem = cart.find(i => i.id === itemId);
+    const approvedQty = approvedItems[itemId] || 0;
+    
+    // Get current menu quantity (what customer is adding NOW, not what's in cart)
+    const qtyElement = document.getElementById('qty-' + itemId);
+    const currentMenuQty = parseInt(qtyElement.textContent) || 0;
+    const newMenuQty = currentMenuQty + delta;
+    
+    if (newMenuQty < 0) {
+        return; // Can't go below 0
+    }
+    
+    // Update menu display
+    qtyElement.textContent = newMenuQty;
+    
+    // Update cart badge
+    updateCartBadge();
+}
+
+
+// Update cart badge only
+function updateCartBadge() {
+    // Count menu quantities (what customer is currently adding)
+    let newItemsCount = 0;
+    document.querySelectorAll('.menu-item').forEach(menuItem => {
+        const id = menuItem.dataset.id;
+        const qtyElement = document.getElementById('qty-' + id);
+        if (qtyElement) {
+            newItemsCount += parseInt(qtyElement.textContent) || 0;
+        }
+    });
+    
+    const badge = document.getElementById('cartBadge');
+    if (newItemsCount > 0) {
+        badge.textContent = newItemsCount;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+// Update UI
+function updateUI() {
+    // Menu quantities are managed by updateQuantity function
+    // Just update cart modal
+    updateCartModal();
+}
+
+
+// Update cart modal
+function updateCartModal() {
+    const cartItems = document.getElementById('cartItems');
+   
+    const newItemsFromMenu = [];
+    document.querySelectorAll('.menu-item').forEach(menuItem => {
+        const id = menuItem.dataset.id;
+        const qtyElement = document.getElementById('qty-' + id);
+        const qty = parseInt(qtyElement.textContent) || 0;
+        if (qty > 0) {
+            newItemsFromMenu.push({
+                id: id,
+                name: menuItem.dataset.name,
+                price: parseInt(menuItem.dataset.price),
+                quantity: qty
+            });
+        }
+    });
+    
+    if (cart.length === 0 && newItemsFromMenu.length === 0) {
+        cartItems.innerHTML = `
+            <div class="text-center py-12">
+                <div class="text-6xl mb-3 float-anim">🍽️</div>
+                <div class="text-base font-bold text-gray-400 dark:text-d-muted">Your cart is empty</div>
+                <div class="text-sm text-gray-300 dark:text-gray-500 mt-1">Add something delicious!</div>
+            </div>
+        `;
+        document.getElementById('cartFooterContent').innerHTML = '<div class="text-center text-gray-400 dark:text-d-muted text-sm">No items yet</div>';
+        return;
+    }
+   
+    let html = '';
+    let approvedTotal = 0, pendingTotal = 0, newItemsTotal = 0;
+    const approvedCartItems = [], pendingCartItems = [];
+    
+    cart.forEach(item => {
+        const approvedQty = approvedItems[item.id] || 0;
+        const pendingQty = item.quantity - approvedQty;
+        if (approvedQty > 0) {
+            approvedCartItems.push({ ...item, displayQty: approvedQty, displayTotal: item.price * approvedQty });
+            approvedTotal += item.price * approvedQty;
+        }
+        if (pendingQty > 0) {
+            pendingCartItems.push({ ...item, displayQty: pendingQty, displayTotal: item.price * pendingQty });
+            pendingTotal += item.price * pendingQty;
+        }
+    });
+    newItemsFromMenu.forEach(item => { newItemsTotal += item.price * item.quantity; });
+    
+    // Approved items
+    if (approvedCartItems.length > 0) {
+        html += `<div class="mb-4">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs font-black text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/20 px-2.5 py-1 rounded-full">✅ Approved — Being Prepared</span>
+            </div>`;
+        approvedCartItems.forEach(item => {
+            html += `
+            <div class="bg-teal-50/60 dark:bg-teal-500/10 rounded-xl p-3 mb-2 border border-teal-200/60 dark:border-teal-500/30">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100">${item.name}</h4>
+                        <p class="text-xs text-teal-600 dark:text-teal-400 font-semibold mt-0.5">₹${item.price} × ${item.displayQty}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-black text-teal-600 dark:text-teal-400">₹${item.displayTotal}</p>
+                        <p class="text-[10px] text-teal-500 dark:text-teal-400 font-bold">🔒 Locked</p>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+    
+    // Pending items
+    if (pendingCartItems.length > 0) {
+        html += `<div class="mb-4">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs font-black text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/20 px-2.5 py-1 rounded-full">⏳ Waiting for Approval</span>
+            </div>`;
+        pendingCartItems.forEach(item => {
+            html += `
+            <div class="bg-amber-50/60 dark:bg-amber-500/10 rounded-xl p-3 mb-2 border border-amber-200/60 dark:border-amber-500/30">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100">${item.name}</h4>
+                        <p class="text-xs text-amber-600 dark:text-amber-400 font-semibold mt-0.5">₹${item.price} × ${item.displayQty}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-black text-amber-600 dark:text-amber-400">₹${item.displayTotal}</p>
+                        <p class="text-[10px] text-amber-500 dark:text-amber-400 font-bold">⏳ Pending</p>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+    
+    // New items
+    if (newItemsFromMenu.length > 0) {
+        html += `<div class="mb-2">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-xs font-black text-coral-500 bg-coral-50 dark:bg-coral-500/20 px-2.5 py-1 rounded-full">🆕 New Items</span>
+            </div>`;
+        newItemsFromMenu.forEach(item => {
+            html += `
+            <div class="bg-white dark:bg-d-card rounded-xl p-3 mb-2 border border-gray-200 dark:border-d-surface card-shadow">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100">${item.name}</h4>
+                        <p class="text-xs text-coral-500 font-semibold mt-0.5">₹${item.price} × ${item.quantity}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <p class="text-sm font-black text-coral-500">₹${item.price * item.quantity}</p>
+                        <button onclick="clearMenuItem('${item.id}')" class="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-500/20 text-red-400 hover:bg-red-100 dark:hover:bg-red-500/30 flex items-center justify-center text-xs btn-bounce">🗑️</button>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+   
+    cartItems.innerHTML = html;
+    
+    // Footer
+    const cartFooter = document.getElementById('cartFooterContent');
+    const grandTotal = approvedTotal + pendingTotal + newItemsTotal;
+    
+    let footerHTML = '';
+    
+    if ((approvedTotal > 0 || pendingTotal > 0) && newItemsTotal > 0) {
+        footerHTML += `<div class="flex justify-between items-center mb-3">
+            <span class="text-base font-bold text-gray-500 dark:text-d-muted">Total</span>
+            <div class="text-right">
+                ${approvedTotal > 0 ? `<div class="text-[11px] font-bold text-teal-500 dark:text-teal-400">Approved: ₹${approvedTotal}</div>` : ''}
+                ${pendingTotal > 0 ? `<div class="text-[11px] font-bold text-amber-500 dark:text-amber-400">Pending: ₹${pendingTotal}</div>` : ''}
+                ${newItemsTotal > 0 ? `<div class="text-[11px] font-bold text-coral-500">New: ₹${newItemsTotal}</div>` : ''}
+                <div class="text-xl font-black gradient-text">₹${grandTotal}</div>
+            </div>
+        </div>`;
+    } else {
+        footerHTML += `<div class="flex justify-between items-center mb-3">
+            <span class="text-base font-bold text-gray-500 dark:text-d-muted">Total</span>
+            <span class="text-xl font-black gradient-text">₹${grandTotal}</span>
+        </div>`;
+    }
+    
+    if (newItemsTotal > 0) {
+        footerHTML += `
+            <div class="flex gap-2">
+                <button onclick="clearNewItems()" class="flex-1 bg-gray-100 dark:bg-d-surface hover:bg-gray-200 dark:hover:bg-d-card py-3 rounded-2xl font-bold text-sm text-gray-500 dark:text-d-muted btn-bounce transition-all">
+                    🗑️ Clear
+                </button>
+                <button onclick="placeOrder()" class="flex-[2] bg-coral-500 hover:bg-coral-600 py-3 rounded-2xl font-bold text-sm text-white shadow-lg shadow-coral-500/30 btn-bounce transition-all">
+                    ✅ Place Order
+                </button>
+            </div>`;
+    } else if (approvedTotal > 0 || pendingTotal > 0) {
+        footerHTML += `
+            <div class="bg-teal-50 dark:bg-teal-500/20 rounded-2xl p-3 text-center">
+                <p class="text-teal-600 dark:text-teal-400 font-bold text-sm">🔄 Refresh to update status</p>
+                <p class="text-xs text-gray-400 dark:text-d-muted mt-1">Add more items to place another order</p>
+            </div>`;
+    }
+    
+    cartFooter.innerHTML = footerHTML;
+}
+
+
+// Clear single menu item
+function clearMenuItem(itemId) {
+    const qtyElement = document.getElementById('qty-' + itemId);
+    if (qtyElement) {
+        qtyElement.textContent = '0';
+        updateCartBadge();
+        updateCartModal();
+    }
+}
+
+// Clear all new items from menu
+function clearNewItems() {
+    if (confirm('Remove all new items?')) {
+        document.querySelectorAll('.menu-item').forEach(menuItem => {
+            const id = menuItem.dataset.id;
+            const qtyElement = document.getElementById('qty-' + id);
+            if (qtyElement) {
+                qtyElement.textContent = '0';
+            }
+        });
+        updateCartBadge();
+        updateCartModal();
+    }
+}
+
+// Remove pending item only (legacy)
+function removePendingItem(itemId) {
+    alert('Cannot modify items that are already sent to waiter.');
+}
+
+// Remove item (legacy - keeping for compatibility)
+function removeItem(itemId) {
+    removePendingItem(itemId);
+}
+
+// Clear cart (legacy)
+function clearCart() {
+    clearNewItems();
+}
+
+
+// Toggle cart
+async function toggleCart() {
+    // Check if order is finished, rejected, or cancelled before opening cart
+    if (existingOrderId && sessionToken) {
+        try {
+            const response = await fetch('/api/check-order-status?orderId=' + encodeURIComponent(existingOrderId) + '&token=' + encodeURIComponent(sessionToken));
+            const result = await response.json();
+           
+            if (result.success) {
+                // If order was cancelled, show message and lock cart
+                if (result.cancelled) {
+                    alert('Your order was cancelled by staff.\n\nThe table is now available for new orders.');
+                    // Clear session and reload without token
+                    localStorage.removeItem('tableSession_' + tableNumber);
+                    location.assign('/order?table=' + tableNumber);
+                    return;
+                }
+                
+                // If order was rejected, clear session and allow new order
+                if (result.rejected) {
+                    alert('Your previous order was rejected by waiter.\nReason: ' + (result.rejectionReason || 'Not specified') + '\n\nYou can place a new order now.');
+                    // Clear session and reload without token
+                    localStorage.removeItem('tableSession_' + tableNumber);
+                    location.assign('/order?table=' + tableNumber);
+                    return;
+                }
+                
+                // If order is served/billed (completed successfully)
+                if (result.status === 'served' || result.status === 'billed') {
+                    alert('Order is already finished! Redirecting to bill...');
+                    location.assign('/bill?table=' + tableNumber + '&token=' + encodeURIComponent(sessionToken));
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('Error checking order status:', error);
+        }
+    }
+   
+    // Update cart contents before showing
+    updateCartModal();
+    
+    document.getElementById('cartModal').classList.toggle('hidden');
+}
+
+
+// Place order
+async function placeOrder() {
+    // Check if order is finished, rejected, or cancelled
+    if (existingOrderId && sessionToken) {
+        try {
+            const response = await fetch('/api/check-order-status?orderId=' + encodeURIComponent(existingOrderId) + '&token=' + encodeURIComponent(sessionToken));
+            const result = await response.json();
+           
+            if (result.success) {
+                // If order was cancelled, show message
+                if (result.cancelled) {
+                    alert('Your order was cancelled by staff.\n\nThe table is now available for new orders.');
+                    // Clear session and reload without token
+                    localStorage.removeItem('tableSession_' + tableNumber);
+                    location.assign('/order?table=' + tableNumber);
+                    return;
+                }
+                
+                // If order was rejected, clear session and allow new order
+                if (result.rejected) {
+                    alert('Your previous order was rejected by waiter.\nReason: ' + (result.rejectionReason || 'Not specified') + '\n\nYou can place a new order now.');
+                    // Clear session and reload without token
+                    localStorage.removeItem('tableSession_' + tableNumber);
+                    location.assign('/order?table=' + tableNumber);
+                    return;
+                }
+                
+                // If order is served/billed (completed successfully)
+                if (result.status === 'served' || result.status === 'billed') {
+                    alert('Order is already finished! Redirecting to bill...');
+                    location.assign('/bill?table=' + tableNumber + '&token=' + encodeURIComponent(sessionToken));
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('Error checking order status:', error);
+        }
+    }
+   
+    // Collect new items from menu
+    const itemsToSubmit = [];
+    let pendingTotal = 0;
+    let pendingItemCount = 0;
+    
+    document.querySelectorAll('.menu-item').forEach(menuItem => {
+        const id = menuItem.dataset.id;
+        const qtyElement = document.getElementById('qty-' + id);
+        const qty = parseInt(qtyElement.textContent) || 0;
+        if (qty > 0) {
+            const price = parseInt(menuItem.dataset.price);
+            itemsToSubmit.push({
+                menuItemId: id,
+                name: menuItem.dataset.name,
+                price: price,
+                quantity: qty
+            });
+            pendingTotal += price * qty;
+            pendingItemCount += qty;
+        }
+    });
+    
+    if (itemsToSubmit.length === 0) {
+        alert('No new items to order. Add items to place order.');
+        return;
+    }
+    
+    document.getElementById('confirmItems').textContent = pendingItemCount;
+    document.getElementById('confirmTotal').textContent = `₹${pendingTotal}`;
+   
+    document.getElementById('cartModal').classList.add('hidden');
+    document.getElementById('confirmModal').classList.remove('hidden');
+}
+
+
+// Close confirm
+function closeConfirm() {
+    document.getElementById('confirmModal').classList.add('hidden');
+}
+
+// Show leave to website confirmation
+function confirmLeaveToWebsite() {
+    document.getElementById('leaveWebsiteModal').classList.remove('hidden');
+}
+
+// Close leave to website modal
+function closeLeaveWebsiteModal() {
+    document.getElementById('leaveWebsiteModal').classList.add('hidden');
+}
+
+// Visit website
+function visitWebsite() {
+    // Open website in new tab
+    window.open('https://yourcafe.com', '_blank');
+    // Close modal
+    closeLeaveWebsiteModal();
+}
+
+
+// Confirm submit
+async function confirmSubmit(btn) {
+    try {
+        // Show loading
+        if (btn) {
+            btn.querySelector('.btn-text').classList.add('hidden');
+            btn.querySelector('.btn-spinner').classList.remove('hidden');
+            btn.disabled = true;
+        }
+        // Collect new items from menu
+        const itemsToSubmit = [];
+        
+        document.querySelectorAll('.menu-item').forEach(menuItem => {
+            const id = menuItem.dataset.id;
+            const qtyElement = document.getElementById('qty-' + id);
+            const qty = parseInt(qtyElement.textContent) || 0;
+            if (qty > 0) {
+                itemsToSubmit.push({
+                    menuItemId: id,
+                    name: menuItem.dataset.name,
+                    price: parseInt(menuItem.dataset.price),
+                    quantity: qty
+                });
+            }
+        });
+        
+        console.log('Items to submit:', itemsToSubmit);
+        console.log('Existing order ID:', existingOrderId);
+        console.log('Session token:', sessionToken);
+           
+        if (itemsToSubmit.length === 0) {
+            alert('No new items to add!');
+            closeConfirm();
+            return;
+        }
+        
+        const requestBody = {
+            tableNumber: tableNumber,
+            items: itemsToSubmit,
+            sessionToken: sessionToken || null,
+            orderId: existingOrderId || null
+        };
+        
+        console.log('Request body:', requestBody);
+       
+        const response = await fetch('/api/customer-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+       
+        const result = await response.json();
+        console.log('Response:', result);
+       
+        if (result.success) {
+            if (result.sessionToken) {
+                localStorage.setItem('tableSession_' + tableNumber, result.sessionToken);
+            }
+           
+            alert(existingOrderId ? 'Items added to your order! Waiting for waiter approval.' : 'Order sent to waiter! Please wait for confirmation.');
+           
+            // Close modals
+            closeConfirm();
+            document.getElementById('cartModal').classList.add('hidden');
+            
+            // Reload page to reset menu and show updated cart
+            const token = result.sessionToken || sessionToken;
+            console.log('Redirecting with token:', token);
+            window.location.href = '/order?table=' + tableNumber + (token ? '&token=' + token : '');
+        } else {
+            console.error('Order failed:', result.error);
+            alert('Error: ' + result.error);
+            closeConfirm();
+        }
+    } catch (error) {
+        console.error('Exception during order submission:', error);
+        alert('Error submitting order: ' + error.message);
+        closeConfirm();
+    }
+}
+
+
+// Color maps for food type filter buttons (light theme)
+const foodFilterColors = {
+    all:      { active: 'bg-coral-500 text-white border-coral-500 shadow-md shadow-coral-500/25', inactive: 'bg-coral-50 dark:bg-coral-500/20 text-coral-500 border-coral-200 dark:border-coral-500/30' },
+    veg:      { active: 'bg-green-500 text-white border-green-500 shadow-md shadow-green-500/25', inactive: 'bg-green-50 dark:bg-green-500/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-500/30' },
+    'non-veg':{ active: 'bg-red-500 text-white border-red-500 shadow-md shadow-red-500/25', inactive: 'bg-red-50 dark:bg-red-500/20 text-red-500 dark:text-red-400 border-red-200 dark:border-red-500/30' },
+    beverage: { active: 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/25', inactive: 'bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30' },
+    other:    { active: 'bg-gray-500 text-white border-gray-500 shadow-md shadow-gray-500/25', inactive: 'bg-gray-50 dark:bg-gray-500/20 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-500/30' }
+};
+
+// Filter by food type
+function filterFoodType(type) {
+    currentFoodTypeFilter = type;
+    
+    // Reset all buttons to their inactive state
+    document.querySelectorAll('.food-filter-btn').forEach(btn => {
+        const btnType = btn.id.replace('food-filter-', '');
+        const colors = foodFilterColors[btnType];
+        btn.className = 'food-filter-btn flex-shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap border-2 transition-all ' + colors.inactive;
+    });
+    
+    // Activate selected button
+    const activeBtn = document.getElementById('food-filter-' + type);
+    const colors = foodFilterColors[type];
+    activeBtn.className = 'food-filter-btn flex-shrink-0 px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap border-2 transition-all ' + colors.active;
+    
+    applyFilters();
+}
+
+// Filter category
+function filterCategory(categoryId, clickedBtn) {
+    currentCategoryFilter = categoryId;
+    
+    document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.classList.remove('cat-btn-active');
+        btn.classList.add('cat-btn-inactive');
+    });
+    clickedBtn.classList.remove('cat-btn-inactive');
+    clickedBtn.classList.add('cat-btn-active');
+    
+    applyFilters();
+}
+
+// Apply both filters
+function applyFilters() {
+    document.querySelectorAll('.menu-item').forEach(item => {
+        const categoryMatch = !currentCategoryFilter || item.dataset.category === currentCategoryFilter;
+        const foodTypeMatch = currentFoodTypeFilter === 'all' || item.dataset.foodType === currentFoodTypeFilter;
+        item.style.display = (categoryMatch && foodTypeMatch) ? 'block' : 'none';
+    });
+}
+
+
+// Refresh page
+async function refreshPage() {
+    const token = sessionToken || localStorage.getItem('tableSession_' + tableNumber);
+   
+    // Check order status before refreshing
+    if (token && existingOrderId) {
+        try {
+            const response = await fetch('/api/check-order-status?orderId=' + encodeURIComponent(existingOrderId) + '&token=' + encodeURIComponent(token));
+            const result = await response.json();
+           
+            if (result.success && (result.status === 'served' || result.status === 'billed')) {
+                location.assign('/bill?table=' + tableNumber + '&token=' + encodeURIComponent(token));
+                return;
+            }
+        } catch (error) {
+            console.error('Error checking order status:', error);
+        }
+    }
+   
+    location.assign('/order?table=' + tableNumber + (token ? '&token=' + encodeURIComponent(token) : ''));
+}
+
+// Refresh cart without closing it
+async function refreshCart() {
+    const token = sessionToken || localStorage.getItem('tableSession_' + tableNumber);
+   
+    // Check order status before refreshing
+    if (token && existingOrderId) {
+        try {
+            const response = await fetch('/api/check-order-status?orderId=' + encodeURIComponent(existingOrderId) + '&token=' + encodeURIComponent(token));
+            const result = await response.json();
+           
+            if (result.success) {
+                // If order was cancelled, show message and redirect
+                if (result.cancelled) {
+                    alert('Your order was cancelled by staff.\n\nThe table is now available for new orders.');
+                    localStorage.removeItem('tableSession_' + tableNumber);
+                    location.assign('/order?table=' + tableNumber);
+                    return;
+                }
+                
+                // If order is served/billed, redirect to bill
+                if (result.status === 'served' || result.status === 'billed') {
+                    location.assign('/bill?table=' + tableNumber + '&token=' + encodeURIComponent(token));
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('Error checking order status:', error);
+        }
+    }
+   
+    // Reload page but keep cart open by adding a flag
+    const url = '/order?table=' + tableNumber + (token ? '&token=' + encodeURIComponent(token) : '') + '&keepCartOpen=true';
+    location.assign(url);
+}
+
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for existing session token FIRST
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenInUrl = urlParams.get('token');
+    const storedToken = localStorage.getItem('tableSession_' + tableNumber);
+    const keepCartOpen = urlParams.get('keepCartOpen');
+   
+    if (storedToken && !sessionToken && !tokenInUrl) {
+        window.location.href = '/order?table=' + tableNumber + '&token=' + storedToken;
+        return;
+    }
+   
+    // Initialize cart modal on page load
+    updateCartModal();
+    
+    // If keepCartOpen flag is set, open the cart automatically
+    if (keepCartOpen === 'true') {
+        document.getElementById('cartModal').classList.remove('hidden');
+    }
+});
+</script>
+
+
+</body>
+</html>
+
+
+

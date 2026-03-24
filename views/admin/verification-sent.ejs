@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verification Email Sent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 flex items-center justify-center h-screen">
+
+<div class="bg-gray-800 p-8 rounded-lg w-96 text-white text-center">
+    <div class="text-6xl mb-4">📧</div>
+    <h2 class="text-2xl mb-4">Check Your Email</h2>
+    <p class="text-gray-400 mb-6">
+        We've sent a verification link to:<br>
+        <span class="text-orange-400 font-semibold"><%= email %></span>
+    </p>
+    <p class="text-sm text-gray-500 mb-6">
+        Click the link in the email to verify your account and complete registration.
+    </p>
+    <a href="/admin" class="inline-block bg-blue-500 px-6 py-2 rounded hover:bg-blue-600">
+        Back to Login
+    </a>
+</div>
+
+</body>
+</html>

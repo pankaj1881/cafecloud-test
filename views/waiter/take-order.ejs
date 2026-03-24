@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Take Order - Cafe Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen">
+    <!-- Global Loading Overlay -->
+    <div id="pageLoadingOverlay" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="text-6xl mb-4 spinner">⚙️</div>
+            <div class="text-2xl font-bold text-white">Loading...</div>
+        </div>
+    </div>
+    
+    <nav class="bg-gray-900 border-b border-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">
+                <% if (orderType === 'dine-in') { %>
+                    <span class="text-sky-400">Table <%= table.tableNumber %></span> <span class="text-orange-500">Order</span>
+                <% } else { %>
+                    <span class="text-purple-400">Parcel</span> <span class="text-orange-500">Order</span>
+                <% } %>
+            </h1>
+            <a href="/waiter/dashboard" class="text-gray-400 hover:text-white">← Back</a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <% if (existingOrder) { %>
+            <div class="bg-orange-500/20 border border-orange-500 rounded-xl p-4 mb-6">
+                <h3 class="text-orange-400 font-bold mb-2">Order <%= existingOrder.orderId %></h3>
+                <p class="text-sm text-gray-300">Current Total: ₹<%= existingOrder.totalAmount %></p>
+            </div>
+
+            <!-- Existing Order Items -->
+            <div class="bg-gray-800 rounded-xl p-6 mb-6">
+                <h3 class="text-xl font-bold text-sky-400 mb-4">Current Order</h3>
+                <div class="space-y-2">
+                    <% existingOrder.items.forEach((item, index) => { 
+                        let statusColor = 'text-red-300';
+                        let statusText = 'Pending';
+                        if (item.status === 'preparing') {
+                            statusColor = 'text-yellow-300';
+                            statusText = 'Preparing';
+                        } else if (item.status === 'ready') {
+                            statusColor = 'text-green-300';
+                            statusText = 'Ready';
+                        } else if (item.status === 'served') {
+                            statusColor = 'text-blue-300';
+                            statusText = 'Served';
+                        }
+                    %>
+                        <div class="flex justify-between items-center bg-gray-900 rounded-lg p-3">
+                            <div class="flex-1">
+                                <div class="font-bold"><%= item.name %></div>
+                                <div class="text-sm text-gray-400">₹<%= item.price %> × <%= item.quantity %> = ₹<%= item.price * item.quantity %></div>
+                            </div>
+                            <div class="<%= statusColor %> text-sm font-semibold mr-4"><%= statusText %></div>
+                            <% if (item.status === 'pending') { %>
+                                <button onclick="removeExistingItem('<%= existingOrder._id %>', <%= index %>, this)" 
+                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">
+                                    <span class="btn-text">Remove</span>
+                                    <span class="btn-spinner hidden spinner">⚙️</span>
+                                </button>
+                            <% } %>
+                        </div>
+                    <% }); %>
+                </div>
+                <div class="border-t border-gray-700 mt-4 pt-4">
+                    <div class="flex justify-between text-xl font-bold">
+                        <span>Current Total:</span>
+                        <span class="text-orange-500">₹<%= existingOrder.totalAmount %></span>
+                    </div>
+                </div>
+            </div>
+        <% } else { %>
+            <!-- Customer Name (for parcel orders) -->
+            <% if (orderType === 'parcel') { %>
+            <div class="bg-gray-800 rounded-xl p-6 mb-6">
+                <label class="block text-gray-300 font-semibold mb-2">Customer Name</label>
+                <input type="text" id="customerName"
+                    class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+                    placeholder="Enter customer name">
+            </div>
+            <% } %>
+            
+            <!-- Customer Phone (Optional) -->
+            <div class="bg-gray-800 rounded-xl p-6 mb-6">
+                <label class="block text-gray-300 font-semibold mb-2">Customer Phone (Optional)</label>
+                <div class="flex">
+                    <span class="inline-flex items-center px-4 bg-gray-900 border border-r-0 border-gray-700 rounded-l-lg">+91</span>
+                    <input type="tel" id="customerPhone" pattern="[0-9]{10}" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"
+                        class="flex-1 bg-gray-900 border border-gray-700 rounded-r-lg px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+                        placeholder="10-digit mobile number (optional)">
+                </div>
+            </div>
+
+            <% if (orderType === 'parcel') { %>
+            <!-- Delivery Type -->
+            <div class="bg-gray-800 rounded-xl p-6 mb-6">
+                <label class="block text-gray-300 font-semibold mb-3">Delivery Type</label>
+                <div class="flex gap-4">
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="deliveryType" value="pickup" checked onchange="toggleAddress()" class="hidden peer">
+                        <div class="bg-gray-900 border-2 border-gray-700 peer-checked:border-purple-500 peer-checked:bg-purple-500/20 rounded-lg p-4 text-center font-semibold">
+                            🏪 Pickup
+                        </div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="deliveryType" value="home-delivery" onchange="toggleAddress()" class="hidden peer">
+                        <div class="bg-gray-900 border-2 border-gray-700 peer-checked:border-purple-500 peer-checked:bg-purple-500/20 rounded-lg p-4 text-center font-semibold">
+                            🏠 Home Delivery
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Delivery Address (shown only for home delivery) -->
+            <div id="addressSection" class="bg-gray-800 rounded-xl p-6 mb-6 hidden">
+                <label class="block text-gray-300 font-semibold mb-2">Delivery Address</label>
+                <textarea id="deliveryAddress" rows="3"
+                    class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-sky-400 focus:outline-none"
+                    placeholder="Enter complete delivery address"></textarea>
+            </div>
+            <% } %>
+        <% } %>
+
+        <!-- Menu Items by Category -->
+        <!-- Filter Buttons -->
+        <div class="bg-gray-800 rounded-xl p-4 mb-4">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="filterMenuItems('all')" id="menu-filter-all" class="menu-filter-btn px-4 py-2 rounded-lg font-semibold bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                    All
+                </button>
+                <button onclick="filterMenuItems('veg')" id="menu-filter-veg" class="menu-filter-btn px-4 py-2 rounded-lg font-semibold bg-gray-900 text-gray-400 hover:bg-green-500/20 hover:text-green-400">
+                    🟢 Veg
+                </button>
+                <button onclick="filterMenuItems('non-veg')" id="menu-filter-non-veg" class="menu-filter-btn px-4 py-2 rounded-lg font-semibold bg-gray-900 text-gray-400 hover:bg-red-500/20 hover:text-red-400">
+                    🔴 Non-Veg
+                </button>
+                <button onclick="filterMenuItems('beverage')" id="menu-filter-beverage" class="menu-filter-btn px-4 py-2 rounded-lg font-semibold bg-gray-900 text-gray-400 hover:bg-yellow-500/20 hover:text-yellow-400">
+                    🟡 Bev & Desserts
+                </button>
+                <button onclick="filterMenuItems('other')" id="menu-filter-other" class="menu-filter-btn px-4 py-2 rounded-lg font-semibold bg-gray-900 text-gray-400 hover:bg-gray-500/20 hover:text-gray-300">
+                    ⚪ Others
+                </button>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <% categories.forEach(category => { 
+                const categoryItems = menuItems.filter(item => item.category._id.toString() === category._id.toString());
+                if (categoryItems.length === 0) return;
+            %>
+                <div class="bg-gray-800 rounded-xl overflow-hidden">
+                    <button onclick="toggleCategory('<%= category._id %>')" 
+                        class="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 p-6 text-left flex justify-between items-center">
+                        <h2 class="text-3xl font-bold"><%= category.name %></h2>
+                        <span id="icon-<%= category._id %>" class="text-3xl">▼</span>
+                    </button>
+                    <div id="cat-<%= category._id %>" class="hidden p-6">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <% categoryItems.forEach(item => { %>
+                                <div class="menu-item-card bg-gray-900 rounded-lg p-5 flex justify-between items-center" data-food-type="<%= item.foodType || 'veg' %>">
+                                    <div class="flex-1">
+                                        <div class="font-bold text-xl flex items-center gap-2">
+                                            <% if (item.foodType === 'veg') { %>
+                                                <span class="text-green-500 text-lg">🟢</span>
+                                            <% } else if (item.foodType === 'non-veg') { %>
+                                                <span class="text-red-500 text-lg">🔴</span>
+                                            <% } else if (item.foodType === 'beverage') { %>
+                                                <span class="text-yellow-500 text-lg">🟡</span>
+                                            <% } else if (item.foodType === 'other') { %>
+                                                <span class="text-gray-400 text-lg">⚪</span>
+                                            <% } %>
+                                            <%= item.name %>
+                                        </div>
+                                        <div class="text-sky-400 font-semibold text-lg">₹<%= item.price %></div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <button onclick="changeQty('<%= item._id %>', -1)" 
+                                            class="bg-red-600 hover:bg-red-700 w-12 h-12 rounded-lg font-bold text-2xl">-</button>
+                                        <span id="qty-<%= item._id %>" class="w-12 text-center font-bold text-2xl">0</span>
+                                        <button onclick="changeQty('<%= item._id %>', 1)" 
+                                            class="bg-green-600 hover:bg-green-700 w-12 h-12 rounded-lg font-bold text-2xl">+</button>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 mt-8 border border-gray-700">
+            <h3 class="text-xl font-bold mb-4">Order Summary</h3>
+            <div id="orderSummary" class="space-y-2 mb-4 text-gray-300">
+                <p class="text-gray-500">No items added yet</p>
+            </div>
+            <div class="border-t border-gray-700 pt-4 mt-4">
+                <div class="flex justify-between text-2xl font-bold">
+                    <span>Total:</span>
+                    <span class="text-orange-500">₹<span id="totalAmount">0</span></span>
+                </div>
+            </div>
+            <button onclick="submitOrder(this)" 
+                class="w-full mt-6 bg-gradient-to-r <%= existingOrder ? 'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' : 'from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700' %> text-white font-bold py-5 text-xl rounded-lg">
+                <span class="btn-text"><% if (existingOrder) { %>💾 Save<% } else { %>Submit Order<% } %></span>
+                <span class="btn-spinner hidden spinner">⚙️</span>
+            </button>
+            <% if (existingOrder) { %>
+                <div class="flex gap-4 mt-4">
+                    <button onclick="finishOrder(this)" 
+                        class="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-5 text-xl rounded-lg">
+                        <span class="btn-text">✅ Finish Order</span>
+                        <span class="btn-spinner hidden spinner">⚙️</span>
+                    </button>
+                    <button onclick="cancelOrder(this)" 
+                        class="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-5 text-xl rounded-lg">
+                        <span class="btn-text">❌ Cancel Order</span>
+                        <span class="btn-spinner hidden spinner">⚙️</span>
+                    </button>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+        const menuItems = <%- JSON.stringify(menuItems.map(item => ({
+            _id: item._id,
+            name: item.name,
+            price: item.price,
+            foodType: item.foodType || 'veg'
+        }))) %>;
+        
+        const orderItems = {};
+        let currentMenuFilter = 'all';
+
+        function filterMenuItems(type) {
+            currentMenuFilter = type;
+            const allItems = document.querySelectorAll('.menu-item-card');
+            const allCategories = document.querySelectorAll('[id^="cat-"]');
+            
+            // Update button styles
+            document.querySelectorAll('.menu-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'text-white');
+                btn.classList.add('bg-gray-900', 'text-gray-400');
+            });
+            
+            const activeBtn = document.getElementById('menu-filter-' + type);
+            activeBtn.classList.remove('bg-gray-900', 'text-gray-400');
+            activeBtn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'text-white');
+            
+            // Filter items
+            allItems.forEach(item => {
+                const itemType = item.getAttribute('data-food-type');
+                if (type === 'all' || itemType === type) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            // Hide empty categories
+            allCategories.forEach(category => {
+                const visibleItems = category.querySelectorAll('.menu-item-card[style*="display: flex"]');
+                const categoryContainer = category.closest('.bg-gray-800');
+                
+                if (visibleItems.length === 0) {
+                    categoryContainer.style.display = 'none';
+                } else {
+                    categoryContainer.style.display = 'block';
+                }
+            });
+        }
+
+        function toggleAddress() {
+            const deliveryType = document.querySelector('input[name="deliveryType"]:checked')?.value;
+            const addressSection = document.getElementById('addressSection');
+            if (deliveryType === 'home-delivery') {
+                addressSection.classList.remove('hidden');
+            } else {
+                addressSection.classList.add('hidden');
+            }
+        }
+
+        function toggleCategory(categoryId) {
+            const content = document.getElementById('cat-' + categoryId);
+            const icon = document.getElementById('icon-' + categoryId);
+            const isCurrentlyOpen = !content.classList.contains('hidden');
+            
+            // Close all categories first
+            document.querySelectorAll('[id^="cat-"]').forEach(cat => {
+                cat.classList.add('hidden');
+            });
+            document.querySelectorAll('[id^="icon-"]').forEach(icon => {
+                icon.textContent = '▼';
+            });
+            
+            // If it wasn't open, open it now
+            if (!isCurrentlyOpen) {
+                content.classList.remove('hidden');
+                icon.textContent = '▲';
+            }
+        }
+
+        function changeQty(itemId, change) {
+            const qtyEl = document.getElementById('qty-' + itemId);
+            let qty = parseInt(qtyEl.textContent) + change;
+            if (qty < 0) qty = 0;
+            qtyEl.textContent = qty;
+            
+            if (qty > 0) {
+                const item = menuItems.find(i => i._id === itemId);
+                orderItems[itemId] = { 
+                    menuItemId: item._id,
+                    name: item.name, 
+                    price: item.price, 
+                    quantity: qty,
+                    status: 'pending'
+                };
+            } else {
+                delete orderItems[itemId];
+            }
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const items = Object.values(orderItems);
+            const summaryEl = document.getElementById('orderSummary');
+            const totalEl = document.getElementById('totalAmount');
+            
+            if (items.length === 0) {
+                summaryEl.innerHTML = '<p class="text-gray-500">No items added yet</p>';
+                totalEl.textContent = '0';
+                return;
+            }
+            
+            let total = 0;
+            summaryEl.innerHTML = items.map(item => {
+                const subtotal = item.price * item.quantity;
+                total += subtotal;
+                return `<div class="flex justify-between">
+                    <span>${item.name} x ${item.quantity}</span>
+                    <span>₹${subtotal}</span>
+                </div>`;
+            }).join('');
+            
+            totalEl.textContent = total;
+        }
+
+        function removeExistingItem(orderId, itemIndex, btn) {
+            if (!confirm('Remove this item from order?')) return;
+            
+            if (btn) {
+                btn.querySelector('.btn-text').classList.add('hidden');
+                btn.querySelector('.btn-spinner').classList.remove('hidden');
+                btn.disabled = true;
+            }
+            
+            fetch(`/waiter/remove/${orderId}/${itemIndex}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Cannot remove item');
+                    }
+                });
+        }
+
+        function finishOrder(btn) {
+            const orderId = '<%= existingOrder ? existingOrder._id : "" %>';
+            
+            if (!confirm('Finish this order and send for billing?')) return;
+            
+            if (btn) {
+                btn.querySelector('.btn-text').classList.add('hidden');
+                btn.querySelector('.btn-spinner').classList.remove('hidden');
+                btn.disabled = true;
+            }
+            
+            fetch(`/waiter/finish/${orderId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Order finished! Ready for billing.');
+                        window.location.href = '/waiter/dashboard';
+                    } else {
+                        alert('Error finishing order');
+                    }
+                });
+        }
+
+        function cancelOrder(btn) {
+            const orderId = '<%= existingOrder ? existingOrder._id : "" %>';
+            
+            if (!confirm('Cancel entire order for this table? This cannot be undone.')) return;
+            
+            if (btn) {
+                btn.querySelector('.btn-text').classList.add('hidden');
+                btn.querySelector('.btn-spinner').classList.remove('hidden');
+                btn.disabled = true;
+            }
+            
+            fetch(`/waiter/cancel/${orderId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Order cancelled successfully.');
+                        window.location.href = '/waiter/dashboard';
+                    } else {
+                        alert('Error cancelling order: ' + (data.error || 'Unknown error'));
+                        if (btn) {
+                            btn.querySelector('.btn-text').classList.remove('hidden');
+                            btn.querySelector('.btn-spinner').classList.add('hidden');
+                            btn.disabled = false;
+                        }
+                    }
+                })
+                .catch(err => {
+                    alert('Error cancelling order. Please try again.');
+                    if (btn) {
+                        btn.querySelector('.btn-text').classList.remove('hidden');
+                        btn.querySelector('.btn-spinner').classList.add('hidden');
+                        btn.disabled = false;
+                    }
+                });
+        }
+
+        function submitOrder(btn) {
+            const name = document.getElementById('customerName')?.value || '';
+            const phone = document.getElementById('customerPhone')?.value || '';
+            if (phone && phone.length !== 10) {
+                alert('Please enter valid 10-digit phone number or leave empty');
+                return;
+            }
+            
+            const orderType = '<%= orderType %>';
+            let deliveryType = null;
+            let deliveryAddress = null;
+            
+            if (orderType === 'parcel') {
+                deliveryType = document.querySelector('input[name="deliveryType"]:checked')?.value || 'pickup';
+                if (deliveryType === 'home-delivery') {
+                    deliveryAddress = document.getElementById('deliveryAddress')?.value || '';
+                    if (!deliveryAddress.trim()) {
+                        alert('Please enter delivery address for home delivery');
+                        return;
+                    }
+                }
+            }
+            
+            const items = Object.values(orderItems);
+            if (items.length === 0) {
+                alert('Please add at least one item');
+                return;
+            }
+            
+            if (btn) {
+                btn.querySelector('.btn-text').classList.add('hidden');
+                btn.querySelector('.btn-spinner').classList.remove('hidden');
+                btn.disabled = true;
+            }
+            
+            const existingOrderId = '<%= existingOrder ? existingOrder._id : "" %>';
+            
+            const orderData = {
+                orderType: orderType,
+                tableNumber: '<%= table ? table.tableNumber : "" %>',
+                customerName: name,
+                customerPhone: phone,
+                items: items
+            };
+            
+            if (deliveryType) orderData.deliveryType = deliveryType;
+            if (deliveryAddress) orderData.deliveryAddress = deliveryAddress;
+            if (existingOrderId) orderData.orderId = existingOrderId;
+            
+            fetch('/waiter/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`${existingOrderId ? 'Items saved to' : 'Order placed:'} ${data.orderId}`);
+                    window.location.href = '/waiter/dashboard';
+                } else {
+                    alert('Error placing order: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(err => {
+                console.error('Submit error:', err);
+                alert('Error placing order. Please try again.');
+            });
+        }
+    </script>
+</body>
+</html>

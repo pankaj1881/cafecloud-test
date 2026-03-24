@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#111827">
+    <meta name="color-scheme" content="dark">
+    <title>Table <%= tableNumber %> - Occupied</title>
+    <%- include("./partials/favicon") %>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen flex items-center justify-center p-4">
+
+
+<div class="text-center max-w-md">
+    <div class="text-8xl mb-6">⏳</div>
+    <h1 class="text-4xl font-bold mb-4">
+        <span class="text-orange-500">Table <%= tableNumber %></span>
+    </h1>
+    <h2 class="text-2xl font-bold mb-6">Previous Order Needs to be Cleared</h2>
+   
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+        <p class="text-lg text-gray-300 mb-4">
+            <% if (tableStatus === 'pending') { %>
+                An order has been placed for this table and is waiting for waiter approval.
+            <% } else { %>
+                This table has an active order that needs to be completed first.
+            <% } %>
+        </p>
+        <p class="text-sm text-gray-400">
+            <% if (tableStatus === 'pending') { %>
+                Status: <span class="text-yellow-500 font-bold">⏳ Pending Approval</span>
+            <% } else if (tableStatus === 'busy') { %>
+                Status: <span class="text-yellow-500 font-bold">🍽️ Order in Progress</span>
+            <% } else if (tableStatus === 'served') { %>
+                Status: <span class="text-blue-500 font-bold">✓ Food Served</span>
+            <% } else if (tableStatus === 'billing') { %>
+                Status: <span class="text-orange-500 font-bold">💰 Billing in Progress</span>
+            <% } %>
+        </p>
+    </div>
+
+
+    <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-6 mb-6">
+        <p class="text-lg font-bold mb-2">⚠️ Cannot Place New Order</p>
+        <p class="text-sm">Please wait until the previous order is cleared by our staff</p>
+    </div>
+
+
+    <button onclick="checkAgain()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg mb-3">
+        🔄 Check Again
+    </button>
+
+
+    <p class="text-xs text-gray-500">
+        You can also call our staff for assistance
+    </p>
+</div>
+
+
+<script>
+    function checkAgain() {
+        location.reload();
+    }
+
+
+    // Auto refresh every 15 seconds
+    setTimeout(() => location.reload(), 15000);
+</script>
+
+
+</body>
+</html>
+
+
+
+
+
+

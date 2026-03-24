@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hall Bookings - Cafe Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen">
+    <nav class="bg-gray-900 border-b border-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">
+                <span class="text-sky-400">Hall</span> <span class="text-orange-500">Bookings</span>
+            </h1>
+            <div class="flex gap-2 md:gap-3 flex-wrap">
+                <a href="/hall/scheduled-orders" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 md:px-6 md:py-3 text-sm md:text-lg font-bold rounded-lg">📅 Scheduled</a>
+                <a href="/hall/bookings/new" class="bg-green-600 hover:bg-green-700 px-4 py-2 md:px-6 md:py-3 text-sm md:text-lg font-bold rounded-lg">+ New Booking</a>
+                <a href="/waiter/dashboard" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 md:px-6 md:py-3 text-sm md:text-lg font-bold rounded-lg">Back</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <% if (bookings.length === 0) { %>
+            <div class="text-center py-20">
+                <div class="text-6xl mb-4">📅</div>
+                <h2 class="text-2xl font-bold text-gray-400">No upcoming bookings</h2>
+            </div>
+        <% } else { %>
+            <div class="grid md:grid-cols-2 gap-6">
+                <% bookings.forEach(booking => { 
+                    let bgColor = 'from-green-500 to-green-600';
+                    let statusText = 'Confirmed';
+                    
+                    if (booking.status === 'ongoing') {
+                        bgColor = 'from-blue-500 to-blue-600';
+                        statusText = 'Ongoing';
+                    }
+                    
+                    const bookingDate = new Date(booking.bookingDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const isToday = bookingDate.toDateString() === today.toDateString();
+                %>
+                    <div class="bg-gradient-to-br <%= bgColor %> rounded-xl p-6 shadow-lg">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <div class="text-3xl font-bold mb-1"><%= booking.bookingId %></div>
+                                <div class="text-xl font-semibold"><%= booking.hallId.name %></div>
+                                <div class="text-sm"><%= statusText %></div>
+                            </div>
+                            <div class="text-right">
+                                <% if (isToday) { %>
+                                    <div class="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold mb-2">TODAY</div>
+                                <% } %>
+                                <div class="text-lg font-bold"><%= bookingDate.toLocaleDateString('en-IN') %></div>
+                                <div class="text-base">
+                                    <% 
+                                        const fmt12 = (t) => { if(!t) return ''; const [h,m]=t.split(':'); const hr=parseInt(h); return (hr%12||12)+':'+m+(hr>=12?' PM':' AM'); };
+                                    %>
+                                    <%= fmt12(booking.startTime) %> - <%= fmt12(booking.endTime) %>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-black/30 rounded-lg p-4 mb-4">
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <div class="text-gray-300">Customer</div>
+                                    <div class="font-bold"><%= booking.customerName %></div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-300">Phone</div>
+                                    <div class="font-bold"><%= booking.customerPhone %></div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-300">Advance Paid</div>
+                                    <div class="font-bold">₹<%= booking.advanceAmount %></div>
+                                </div>
+                            </div>
+                            <% if (booking.specialRequirements) { %>
+                                <div class="mt-3 pt-3 border-t border-white/20">
+                                    <div class="text-gray-300 text-sm">Special Requirements</div>
+                                    <div class="text-sm"><%= booking.specialRequirements %></div>
+                                </div>
+                            <% } %>
+                        </div>
+                        
+                        <div class="flex gap-3">
+                            <a href="/hall/bookings/<%= booking._id %>" 
+                                class="flex-1 bg-white text-green-700 font-bold py-3 rounded-lg hover:bg-gray-100 text-center">
+                                View Details
+                            </a>
+                            <button onclick="cancelBooking('<%= booking._id %>')" 
+                                class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        function cancelBooking(id) {
+            if (!confirm('Cancel this booking?')) return;
+            
+            fetch(`/hall/bookings/${id}/cancel`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) location.reload();
+                });
+        }
+    </script>
+</body>
+</html>

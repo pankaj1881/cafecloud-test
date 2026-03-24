@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <meta name="color-scheme" content="light dark">
+    <title>Bill - Table <%= tableNumber %></title>
+    <%- include("./partials/favicon") %>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'media',
+            theme: {
+                extend: {
+                    fontFamily: { fun: ['Nunito', 'sans-serif'] },
+                    colors: {
+                        coral: { 50:'#fff5f2', 500:'#FF6B35' },
+                        teal:  { 50:'#e8faf8', 500:'#2EC4B6' },
+                        d:     { bg:'#0f172a', card:'#1e293b', surface:'#334155', muted:'#94a3b8' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { overscroll-behavior: none; font-family: 'Nunito', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #FF6B35 0%, #2EC4B6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-d-bg text-gray-800 dark:text-gray-100 min-h-screen font-fun">
+
+<!-- Header -->
+<div class="sticky top-0 z-50 bg-white/90 dark:bg-d-bg/90 backdrop-blur-lg border-b border-gray-100 dark:border-d-surface shadow-sm p-4">
+    <div class="flex justify-between items-center">
+        <div class="flex-1">
+            <h1 class="text-lg font-black gradient-text">Table <%= tableNumber %></h1>
+            <p class="text-xs font-bold text-teal-500">✅ Order Completed</p>
+        </div>
+    </div>
+</div>
+
+<!-- Bill Content -->
+<div class="p-4 min-h-[80vh] flex items-center justify-center">
+    <div class="bg-white dark:bg-d-card rounded-3xl p-6 border border-gray-100 dark:border-d-surface shadow-lg max-w-sm md:max-w-md w-full">
+        <div class="text-center mb-5">
+            <div class="w-16 h-16 bg-teal-50 dark:bg-teal-500/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <span class="text-3xl">✅</span>
+            </div>
+            <h2 class="text-xl font-black gradient-text">Order Complete!</h2>
+        </div>
+       
+        <div class="bg-gray-50 dark:bg-d-bg rounded-2xl p-4 mb-4">
+            <div class="flex justify-between mb-2">
+                <span class="text-xs text-gray-400 dark:text-d-muted">Order ID</span>
+                <span class="font-bold text-xs text-gray-700 dark:text-gray-200"><%= order.orderId %></span>
+            </div>
+            <div class="flex justify-between mb-4">
+                <span class="text-xs text-gray-400 dark:text-d-muted">Table</span>
+                <span class="font-bold text-xs text-gray-700 dark:text-gray-200"><%= tableNumber %></span>
+            </div>
+           
+            <div class="border-t border-gray-200 dark:border-d-surface pt-3">
+                <h3 class="text-sm font-black text-gray-700 dark:text-gray-200 mb-3">Order Summary</h3>
+                <% order.items.forEach(item => { %>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-sm text-gray-600 dark:text-d-muted"><%= item.name %> × <%= item.quantity %></span>
+                        <span class="text-sm font-bold text-gray-700 dark:text-gray-200">₹<%= item.price * item.quantity %></span>
+                    </div>
+                <% }); %>
+            </div>
+           
+            <div class="border-t border-gray-200 dark:border-d-surface mt-3 pt-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-bold text-gray-600 dark:text-gray-300">Total</span>
+                    <span class="text-xl font-black gradient-text">₹<%= order.totalAmount %></span>
+                </div>
+            </div>
+        </div>
+       
+        <div class="text-center bg-coral-50 dark:bg-coral-500/20 rounded-2xl p-4">
+            <p class="text-sm font-bold text-gray-600 dark:text-gray-200">Thank you for dining with us! 🎉</p>
+            <p class="text-xs text-gray-400 dark:text-d-muted mt-1">Please proceed to counter for payment</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

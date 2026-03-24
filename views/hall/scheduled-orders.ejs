@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduled Orders - Cafe Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen">
+    <nav class="bg-gray-900 border-b border-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">
+                <span class="text-sky-400">Scheduled</span> <span class="text-orange-500">Orders</span>
+            </h1>
+            <a href="/waiter/dashboard" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 text-lg font-bold rounded-lg">Go to Main Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <% if (bookings.length === 0) { %>
+            <div class="text-center py-20">
+                <div class="text-6xl mb-4">📅</div>
+                <h2 class="text-2xl font-bold text-gray-400">No scheduled orders</h2>
+            </div>
+        <% } else { %>
+            <div class="grid gap-6">
+                <% bookings.forEach(booking => { %>
+                    <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <div class="text-2xl font-bold"><%= booking.bookingId %></div>
+                                <div class="text-xl"><%= booking.hallId.name %></div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-lg font-bold"><%= new Date(booking.bookingDate).toLocaleDateString('en-IN') %></div>
+                                <div class="text-sm"><%= booking.startTime %> - <%= booking.endTime %></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h3 class="font-bold mb-3">Food Orders (<%= booking.foodOrderIds.length %>)</h3>
+                            <div class="space-y-3">
+                                <% booking.foodOrderIds.forEach(order => { %>
+                                    <div class="bg-gray-600 p-3 rounded-lg">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <div class="font-bold"><%= order.orderId %></div>
+                                            <% if (!order.sentToKitchen) { %>
+                                                <button onclick="sendToKitchen('<%= order._id %>')" 
+                                                    class="bg-orange-600 hover:bg-orange-700 px-3 py-1 rounded text-sm font-bold">
+                                                    Send to Kitchen
+                                                </button>
+                                            <% } else { %>
+                                                <span class="bg-green-600 px-3 py-1 rounded text-sm font-bold">✓ Sent</span>
+                                            <% } %>
+                                        </div>
+                                        <div class="space-y-1 text-sm">
+                                            <% order.items.forEach(item => { %>
+                                                <div class="flex justify-between">
+                                                    <span><%= item.name %> x<%= item.quantity %></span>
+                                                    <span>₹<%= item.price * item.quantity %></span>
+                                                </div>
+                                            <% }); %>
+                                        </div>
+                                        <div class="mt-2 pt-2 border-t border-gray-500 font-bold">
+                                            Total: ₹<%= order.totalAmount %>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        async function sendToKitchen(orderId) {
+            if (!confirm('Send this order to kitchen now?')) return;
+            
+            const res = await fetch(`/hall/orders/${orderId}/send-to-kitchen`, { 
+                method: 'POST' 
+            }).then(r => r.json());
+            
+            if (res.success) {
+                alert('Order sent to kitchen!');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

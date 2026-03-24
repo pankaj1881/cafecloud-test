@@ -1,0 +1,31 @@
+<footer class="bg-gradient-to-r from-gray-900 via-black to-gray-900 text-gray-300 py-10 border-t border-gray-800">
+    <div class="container mx-auto text-center space-y-4">
+        <div class="flex justify-center items-center space-x-2 text-2xl font-bold">
+            <span class="text-sky-400">Cafe</span>
+            <span class="text-orange-500">Cloud</span>
+        </div>
+        <% const weeklyOff = settings?.weeklyOff || 'None'; %>
+        <%
+            function to12Hr(t) {
+                if (!t) return '';
+                var parts = t.split(':');
+                var h = parseInt(parts[0]);
+                var ampm = h >= 12 ? 'PM' : 'AM';
+                h = h % 12 || 12;
+                return h + ':' + parts[1] + ' ' + ampm;
+            }
+        %>
+        <p class="text-sm">
+            <span class="text-orange-400 font-semibold">Hours:</span> <%= to12Hr(settings?.openingTime || '09:00') %> - <%= to12Hr(settings?.closingTime || '22:00') %> | 
+            <span class="text-orange-400 font-semibold"><%= weeklyOff === 'None' ? 'Open:' : 'Weekly Off:' %></span> <%= weeklyOff === 'None' ? 'All Days' : weeklyOff %>
+        </p>
+        <% if (settings?.phone) { %>
+        <p class="text-sm"><span class="text-orange-400 font-semibold">Contact:</span> <%= settings.phone %></p>
+        <% } %>
+        <% if (settings?.address) { %>
+        <p class="text-xs max-w-2xl mx-auto leading-relaxed"><%= settings.address %></p>
+        <% } %>
+        <p class="text-sm">© <%= new Date().getFullYear() %> Cafe Cloud. All rights reserved.</p>
+
+    </div>
+</footer>

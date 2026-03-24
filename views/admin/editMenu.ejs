@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Menu Item</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-10">
+
+<h1 class="text-3xl mb-6">Edit Menu Item</h1>
+
+<% if (typeof error !== 'undefined' && error) { %>
+    <div class="bg-red-500 text-white p-4 rounded mb-4">
+        <%= error %>
+    </div>
+<% } %>
+
+<form action="/admin/menu/edit/<%= item._id %>" method="POST" enctype="multipart/form-data" class="space-y-4">
+    <input type="text" name="name" value="<%= item.name %>"
+        placeholder="Item Name"
+        class="w-full p-2 text-black rounded"
+        required>
+
+    <input type="number" name="price" value="<%= item.price %>"
+        placeholder="Price"
+        class="w-full p-2 text-black rounded"
+        required>
+
+    <select name="category"
+        class="w-full p-2 text-black rounded"
+        required>
+        <option value="">Select Category</option>
+        <% categories.forEach(cat => { %>
+            <option value="<%= cat._id %>" <%= item.category._id.toString() === cat._id.toString() ? 'selected' : '' %>>
+                <%= cat.name %>
+            </option>
+        <% }) %>
+    </select>
+
+    <select name="foodType"
+        class="w-full p-2 text-black rounded"
+        required>
+        <option value="">Select Food Type</option>
+        <option value="veg" <%= item.foodType === 'veg' ? 'selected' : '' %>>🟢 Vegetarian</option>
+        <option value="non-veg" <%= item.foodType === 'non-veg' ? 'selected' : '' %>>🔴 Non-Vegetarian</option>
+        <option value="beverage" <%= item.foodType === 'beverage' ? 'selected' : '' %>>🟡 Beverages & Desserts</option>
+        <option value="other" <%= item.foodType === 'other' ? 'selected' : '' %>>⚪ Other</option>
+    </select>
+    
+    <% if (item.image) { %>
+        <div class="bg-gray-800 p-4 rounded">
+            <p class="text-sm text-gray-400 mb-2">Current Image:</p>
+            <img src="<%= getImageUrl(item.image) %>" alt="<%= item.name %>" class="w-32 h-32 object-cover rounded">
+            <p class="text-sm text-gray-400 mt-2">Upload new image to replace (optional)</p>
+        </div>
+    <% } %>
+    
+    <input type="file" name="image"
+    class="w-full p-2 text-black rounded">
+    <p class="text-gray-400 text-sm">Maximum file size: 2MB. Supported formats: JPG, PNG, WebP</p>
+
+    <textarea name="description"
+        placeholder="Description"
+        class="w-full p-2 text-black rounded"><%= item.description || '' %></textarea>
+
+    <div class="flex gap-4">
+        <button type="submit" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded">
+            Save Changes
+        </button>
+        <a href="/admin/menu/delete/<%= item._id %>" 
+            onclick="return confirm('Are you sure you want to delete this menu item?')"
+            class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded inline-block">
+            Delete Item
+        </a>
+    </div>
+</form>
+
+<a href="/admin/menu-management?tab=items" class="block mt-6 text-blue-400">
+    Back to Menu Management
+</a>
+
+</body>
+</html>

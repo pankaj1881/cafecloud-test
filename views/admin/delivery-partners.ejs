@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Delivery Partners - Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spinner { animation: spin 1s linear infinite; display: inline-block; }
+        nav { background: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        nav h1 { font-size: 1.5rem; }
+        nav a { color: white; text-decoration: none; padding: 0.5rem 1rem; background: #34495e; border-radius: 5px; }
+        nav a:hover { background: #1abc9c; }
+        .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+        .add-section { background: white; padding: 2rem; border-radius: 10px; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .add-section h2 { margin-bottom: 1rem; color: #2c3e50; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 0.3rem; color: #333; }
+        .form-group input { width: 100%; padding: 0.6rem; border: 2px solid #ddd; border-radius: 5px; font-size: 1rem; }
+        .form-group input:focus { border-color: #1abc9c; outline: none; }
+        .submit-btn { padding: 0.75rem 2rem; background: #1abc9c; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .submit-btn:hover { background: #16a085; }
+        .partner-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+        .partner-card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; position: relative; }
+        .partner-card img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.75rem; }
+        .partner-card h3 { font-size: 1.1rem; margin-bottom: 0.3rem; }
+        .partner-card a.url { color: #1abc9c; font-size: 0.8rem; word-break: break-all; }
+        .partner-card .delete-btn { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; }
+        .partner-card .delete-btn:hover { background: #c0392b; }
+        .empty-state { text-align: center; padding: 3rem; color: #7f8c8d; }
+        .empty-state i { font-size: 4rem; margin-bottom: 1rem; }
+        .error-msg { background: #e74c3c; color: white; padding: 1rem; border-radius: 5px; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div id="pageLoadingOverlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="text-align: center;">
+            <div style="font-size: 4rem; margin-bottom: 1rem;" class="spinner">⚙️</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: white;">Loading...</div>
+        </div>
+    </div>
+
+    <nav>
+        <h1><i class="fas fa-motorcycle"></i> Delivery Partners</h1>
+        <a href="/admin/dashboard"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+    </nav>
+
+    <div class="container">
+        <div class="add-section">
+            <h2><i class="fas fa-plus-circle"></i> Add Delivery Partner</h2>
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="error-msg"><i class="fas fa-exclamation-circle"></i> <%= error %></div>
+            <% } %>
+            <form action="/admin/delivery-partners/add" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>Partner Name</label>
+                    <input type="text" name="name" placeholder="e.g. Swiggy, Zomato, UnBox" required>
+                </div>
+                <div class="form-group">
+                    <label>Logo Image</label>
+                    <input type="file" name="logo" accept="image/*" required>
+                    <p style="font-size: 0.8rem; color: #7f8c8d; margin-top: 0.3rem;">Square logo recommended. Max 2MB.</p>
+                </div>
+                <div class="form-group">
+                    <label>Order URL</label>
+                    <input type="text" name="url" placeholder="https://www.swiggy.com/restaurants/your-cafe" required>
+                </div>
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-plus"></i>
+                    <span class="btn-text">Add Partner</span>
+                    <span class="btn-spinner hidden spinner">⚙️</span>
+                </button>
+            </form>
+        </div>
+
+        <% if (partners.length === 0) { %>
+            <div class="empty-state">
+                <i class="fas fa-motorcycle"></i>
+                <h3>No delivery partners added yet</h3>
+                <p>Add your first delivery partner above</p>
+            </div>
+        <% } else { %>
+            <div class="partner-list">
+                <% partners.forEach(partner => { %>
+                    <div class="partner-card">
+                        <a href="/admin/delivery-partners/delete/<%= partner._id %>" class="delete-btn" onclick="return confirm('Delete this partner?')">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                        <img src="<%= getImageUrl(partner.logo, 'menu-images') %>" alt="<%= partner.name %>">
+                        <h3><%= partner.name %></h3>
+                        <a href="<%= partner.url %>" target="_blank" class="url"><%= partner.url.substring(0, 40) %>...</a>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('pageLoadingOverlay').style.display = 'none';
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function() {
+                    const btn = this.querySelector('button[type="submit"]');
+                    if (btn) {
+                        const textSpan = btn.querySelector('.btn-text');
+                        const spinnerSpan = btn.querySelector('.btn-spinner');
+                        if (textSpan && spinnerSpan) {
+                            textSpan.classList.add('hidden');
+                            spinnerSpan.classList.remove('hidden');
+                            btn.disabled = true;
+                        }
+                    }
+                });
+            });
+            document.querySelectorAll('a[href^="/admin/"]:not([href*="logout"])').forEach(link => {
+                link.addEventListener('click', function() {
+                    document.getElementById('pageLoadingOverlay').style.display = 'flex';
+                });
+            });
+        });
+        window.addEventListener('pageshow', function(e) { if (e.persisted) document.getElementById('pageLoadingOverlay').style.display = 'none'; });
+    </script>
+</body>
+</html>

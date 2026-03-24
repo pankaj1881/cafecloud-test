@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Login - Cafe Cloud</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#f97316">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Cafe Cloud">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/logo.png">
+    <link rel="apple-touch-icon" href="/images/logo.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen flex items-center justify-center">
+    <!-- Install PWA Button -->
+    <button id="installBtn" class="hidden fixed top-4 right-4 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+        📱 Install App
+    </button>
+    <div class="max-w-md w-full mx-4">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold mb-2">
+                    <span class="text-sky-400">Staff</span> <span class="text-orange-500">Login</span>
+                </h1>
+                <p class="text-gray-400">Enter PIN to access Order Dashboard</p>
+            </div>
+
+            <% if (typeof error !== 'undefined') { %>
+                <div class="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg mb-6">
+                    <%= error %>
+                </div>
+            <% } %>
+
+            <form method="POST" action="/waiter/login">
+                <div class="mb-6">
+                    <label class="block text-gray-300 font-semibold mb-3 text-center">Enter 4-Digit PIN</label>
+                    <input type="password" 
+                           name="pin" 
+                           maxlength="4" 
+                           pattern="[0-9]{4}"
+                           class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-4 text-white text-center text-2xl tracking-widest focus:border-sky-400 focus:outline-none"
+                           placeholder="••••"
+                           autofocus
+                           required>
+                </div>
+
+                <button type="submit" 
+                        class="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 rounded-lg text-lg shadow-lg">
+                    Access Dashboard
+                </button>
+            </form>
+
+            <div class="mt-6 space-y-3">
+                <button id="manualInstallBtn" onclick="showInstallInstructions()" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold px-6 py-3 rounded-lg w-full shadow-lg text-base">
+                    📱 Install as App
+                </button>
+                <a href="/" class="block text-center text-gray-400 hover:text-white text-sm">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBtn').classList.remove('hidden');
+        });
+        
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                document.getElementById('installBtn').classList.add('hidden');
+            }
+        });
+        
+        function showInstallInstructions() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                return;
+            }
+            
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isAndroid = /Android/.test(navigator.userAgent);
+            
+            let msg = '';
+            if (isIOS) {
+                msg = 'To install:\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add"';
+            } else if (isAndroid) {
+                msg = 'To install:\n1. Tap the menu (3 dots) in browser\n2. Tap "Add to Home screen" or "Install app"\n3. Tap "Install"';
+            } else {
+                msg = 'To install:\n1. Click the menu (3 dots) in browser\n2. Click "Install Cafe Cloud" or "Add to Home screen"';
+            }
+            alert(msg);
+        }
+        
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed:', err));
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Menu - <%= settings?.cafeName %></title>
+    <%- include("./partials/favicon") %>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .accordion-content {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+            opacity: 0;
+        }
+        .accordion-content.open {
+            opacity: 1;
+        }
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .menu-item {
+            animation: fadeInScale 0.4s ease-out;
+        }
+        .gradient-border {
+            background: linear-gradient(135deg, #38bdf8, #fb923c);
+            padding: 2px;
+            border-radius: 1rem;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #38bdf8 0%, #fb923c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen">
+
+<%- include("partials/navbar") %>
+
+<div class="container mx-auto px-6 py-16">
+    <div class="text-center mb-16">
+        <h1 class="text-5xl md:text-7xl font-extrabold mb-4 gradient-text">Our Menu</h1>
+        <div class="w-32 h-1 bg-gradient-to-r from-sky-400 to-orange-500 mx-auto rounded-full"></div>
+        <p class="text-gray-400 mt-6 text-lg">Discover our handcrafted delights</p>
+        
+        <!-- Filter Buttons -->
+        <div class="flex flex-wrap justify-center gap-3 mt-8">
+            <button onclick="filterItems('all')" id="filter-all" class="filter-btn px-6 py-2 rounded-full font-semibold transition-all bg-gradient-to-r from-sky-500 to-orange-500 text-white">
+                All Items
+            </button>
+            <button onclick="filterItems('veg')" id="filter-veg" class="filter-btn px-6 py-2 rounded-full font-semibold transition-all bg-gray-800 text-gray-400 hover:bg-green-500/20 hover:text-green-400 border border-gray-700">
+                🟢 Veg Only
+            </button>
+            <button onclick="filterItems('non-veg')" id="filter-non-veg" class="filter-btn px-6 py-2 rounded-full font-semibold transition-all bg-gray-800 text-gray-400 hover:bg-red-500/20 hover:text-red-400 border border-gray-700">
+                🔴 Non-Veg
+            </button>
+            <button onclick="filterItems('beverage')" id="filter-beverage" class="filter-btn px-6 py-2 rounded-full font-semibold transition-all bg-gray-800 text-gray-400 hover:bg-yellow-500/20 hover:text-yellow-400 border border-gray-700">
+                🟡 Bev & Desserts
+            </button>
+            <button onclick="filterItems('other')" id="filter-other" class="filter-btn px-6 py-2 rounded-full font-semibold transition-all bg-gray-800 text-gray-400 hover:bg-gray-500/20 hover:text-gray-300 border border-gray-700">
+                ⚪ Others
+            </button>
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto space-y-6">
+        <% categories.forEach(function(category, index) { %>
+            <div class="backdrop-blur-sm bg-gray-900/50 rounded-2xl shadow-2xl border border-gray-800 hover:border-orange-500/50 transition-all duration-300">
+                <button onclick="toggleMenu(<%= index %>)" class="w-full flex justify-between items-center px-8 py-6 text-left group">
+                    <span class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-orange-500 group-hover:from-orange-500 group-hover:to-sky-400 transition-all duration-300">
+                        <%= category.name %>
+                    </span>
+                    <span id="icon-<%= index %>" class="text-4xl font-light text-sky-400 group-hover:text-orange-500 transition-all duration-300 transform group-hover:rotate-90">
+                        +
+                    </span>
+                </button>
+
+                <div id="menu-<%= index %>" class="accordion-content px-8 pb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
+                        <% items.forEach(function(item) { %>
+                            <% if (item.category && item.category._id.toString() === category._id.toString()) { %>
+                                <div class="menu-item bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl shadow-xl p-4 flex flex-col hover:shadow-2xl hover:shadow-orange-500/20 transition-all duration-300 border border-gray-700 hover:border-orange-500/50" data-food-type="<%= item.foodType || 'veg' %>">
+                                    <% if (item.image) { %>
+                                        <div class="w-full h-40 mb-3">
+                                            <div class="gradient-border h-full">
+                                                <img src="<%= getImageUrl(item.image) %>" class="w-full h-full object-cover rounded-xl">
+                                            </div>
+                                        </div>
+                                    <% } %>
+                                    <h3 class="text-lg font-bold text-sky-400 mb-2 flex items-center gap-2">
+                                        <% if (item.foodType === 'veg') { %>
+                                            <span class="text-green-500">🟢</span>
+                                        <% } else if (item.foodType === 'non-veg') { %>
+                                            <span class="text-red-500">🔴</span>
+                                        <% } else if (item.foodType === 'beverage') { %>
+                                            <span class="text-yellow-500">🟡</span>
+                                        <% } else if (item.foodType === 'other') { %>
+                                            <span class="text-gray-400">⚪</span>
+                                        <% } %>
+                                        <%= item.name %>
+                                    </h3>
+                                    <p class="text-gray-400 text-sm leading-relaxed mb-3 flex-grow">
+                                        <%= item.description %>
+                                    </p>
+                                    <div class="inline-block">
+                                        <span class="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">
+                                            ₹<%= item.price %>
+                                        </span>
+                                    </div>
+                                </div>
+                            <% } %>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    </div>
+</div>
+
+<%- include("partials/footer") %>
+
+<script>
+    let currentFilter = 'all';
+
+    function toggleMenu(id) {
+        const allMenus = document.querySelectorAll(".accordion-content");
+        const allIcons = document.querySelectorAll("[id^='icon-']");
+        const currentMenu = document.getElementById("menu-" + id);
+        const currentIcon = document.getElementById("icon-" + id);
+        const isOpen = currentMenu.classList.contains("open");
+
+        allMenus.forEach(menu => {
+            menu.style.maxHeight = null;
+            menu.classList.remove("open");
+        });
+        allIcons.forEach(icon => {
+            icon.innerText = "+";
+        });
+
+        if (!isOpen) {
+            currentMenu.classList.add("open");
+            currentMenu.style.maxHeight = currentMenu.scrollHeight + "px";
+            currentIcon.innerText = "−";
+        }
+    }
+
+    function filterItems(type) {
+        currentFilter = type;
+        const allItems = document.querySelectorAll('.menu-item');
+        const allCategories = document.querySelectorAll('.accordion-content');
+        
+        // Update button styles
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('bg-gradient-to-r', 'from-sky-500', 'to-orange-500', 'text-white');
+            btn.classList.add('bg-gray-800', 'text-gray-400', 'border', 'border-gray-700');
+        });
+        
+        const activeBtn = document.getElementById('filter-' + type);
+        activeBtn.classList.remove('bg-gray-800', 'text-gray-400', 'border', 'border-gray-700');
+        activeBtn.classList.add('bg-gradient-to-r', 'from-sky-500', 'to-orange-500', 'text-white');
+        
+        // Filter items
+        allItems.forEach(item => {
+            const itemType = item.getAttribute('data-food-type');
+            if (type === 'all' || itemType === type) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Update accordion heights and hide empty categories
+        allCategories.forEach(category => {
+            const visibleItems = category.querySelectorAll('.menu-item[style*="display: flex"]');
+            const categoryContainer = category.closest('.backdrop-blur-sm');
+            
+            if (visibleItems.length === 0) {
+                categoryContainer.style.display = 'none';
+            } else {
+                categoryContainer.style.display = 'block';
+                if (category.classList.contains('open')) {
+                    category.style.maxHeight = category.scrollHeight + 'px';
+                }
+            }
+        });
+    }
+</script>
+</body>
+
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-white">
+
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-4xl font-bold text-orange-400">📊 Sales Analysis</h1>
+        <a href="/admin/dashboard" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition">← Back</a>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <!-- Today's Revenue -->
+        <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-orange-100 text-sm">Today's Revenue</p>
+                    <h3 class="text-3xl font-bold mt-2">₹<%= todayRevenue.toFixed(2) %></h3>
+                </div>
+                <div class="text-5xl opacity-20">💰</div>
+            </div>
+        </div>
+
+        <!-- Today's Orders -->
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-blue-100 text-sm">Today's Orders</p>
+                    <h3 class="text-3xl font-bold mt-2"><%= todayOrders %></h3>
+                </div>
+                <div class="text-5xl opacity-20">📦</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Revenue Bar Chart -->
+    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-8">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <h3 class="text-xl font-bold text-orange-400">📈 <%= weekStartFormatted %> - <%= weekEndFormatted %> Revenue</h3>
+            <div class="flex gap-2">
+                <button id="prevWeekBtn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition">&lt;</button>
+                <button id="nextWeekBtn" <%= weekOffset === 0 ? 'disabled' : '' %> class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">&gt;</button>
+            </div>
+        </div>
+        <div class="flex items-end justify-around h-64 gap-2">
+            <% weeklyData.forEach(day => { %>
+                <div class="flex flex-col items-center flex-1">
+                    <div class="text-xs text-gray-400 mb-2">₹<%= day.revenue.toFixed(0) %></div>
+                    <% 
+                    var barHeightPx = day.revenue > 0 ? Math.max((day.revenue / maxWeeklyRevenue) * 200, 8) : 0;
+                    %>
+                    <div class="w-full bg-gradient-to-t from-orange-500 to-orange-400 rounded-t-lg" 
+                         style="height: <%= barHeightPx %>px;">
+                    </div>
+                    <div class="text-sm font-semibold mt-2 <%= day.day === weeklyData[weeklyData.length - 1].day ? 'text-orange-400' : 'text-gray-300' %>"><%= day.day %></div>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+
+    <!-- Monthly Category Revenue Pie Chart -->
+    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-8">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-orange-400">🍰 <%= pieChartMonthName %> - Category Revenue</h3>
+            <select id="monthSelect" class="bg-gray-900 text-white px-4 py-2 rounded-lg border border-gray-700 focus:ring-2 focus:ring-orange-500">
+                <% 
+                const today = new Date();
+                for (let i = 0; i < 12; i++) {
+                    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                    const value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                    const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
+                %>
+                    <option value="<%= value %>" <%= value === selectedMonthValue ? 'selected' : '' %>><%= label %></option>
+                <% } %>
+            </select>
+        </div>
+        
+        <% if (pieChartData.length > 0) { %>
+            <div class="flex flex-col lg:flex-row items-center gap-8">
+                <!-- Pie Chart -->
+                <div class="flex-shrink-0">
+                    <canvas id="pieChart" width="400" height="400"></canvas>
+                </div>
+                
+                <!-- Legend -->
+                <div class="flex-1 w-full">
+                    <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                        <!-- Total -->
+                        <div class="flex items-center justify-between bg-orange-500/20 border border-orange-500 rounded-lg p-3 mb-4">
+                            <span class="font-bold text-orange-400">Total Revenue</span>
+                            <span class="font-bold text-orange-400 text-xl">₹<%= totalPieRevenue.toFixed(2) %></span>
+                        </div>
+                        
+                        <% 
+                        const colors = ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#f59e0b', '#06b6d4', '#84cc16', '#f43f5e', '#6366f1'];
+                        pieChartData.forEach((cat, index) => { 
+                            const color = colors[index % colors.length];
+                            const percentage = ((cat.revenue / totalPieRevenue) * 100).toFixed(1);
+                        %>
+                            <div class="flex items-center justify-between bg-gray-700/50 rounded-lg p-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-6 h-6 rounded" style="background-color: <%= color %>"></div>
+                                    <span class="font-semibold"><%= cat.name %></span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-green-400 font-bold">₹<%= cat.revenue.toFixed(2) %></div>
+                                    <div class="text-gray-400 text-sm"><%= percentage %>%</div>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="text-center text-gray-500 py-8">No sales data available for this month</div>
+        <% } %>
+    </div>
+
+    <!-- Divider -->
+    <div class="my-8 border-t-2 border-orange-500/30"></div>
+
+    <!-- Items Analysis Section Header -->
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-white mb-2">📊 Items Performance Analysis</h2>
+        <p class="text-gray-400">Compare best and worst performing items for the selected period</p>
+    </div>
+
+    <!-- Top Items -->
+    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6">
+        <div class="flex flex-col gap-4 mb-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-orange-400">🏆 Top Best-Selling Items</h3>
+                <div class="flex gap-3">
+                    <select id="topSelect" class="bg-gray-900 text-white px-4 py-2 rounded-lg border border-gray-700 focus:ring-2 focus:ring-orange-500">
+                        <option value="5" <%= topLimit === 5 ? 'selected' : '' %>>Top 5</option>
+                        <option value="10" <%= topLimit === 10 ? 'selected' : '' %>>Top 10</option>
+                        <option value="20" <%= topLimit === 20 ? 'selected' : '' %>>Top 20</option>
+                        <option value="50" <%= topLimit === 50 ? 'selected' : '' %>>Top 50</option>
+                    </select>
+                    <select id="filterSelect" class="bg-gray-900 text-white px-4 py-2 rounded-lg border border-gray-700 focus:ring-2 focus:ring-orange-500">
+                        <option value="today" <%= filter === 'today' ? 'selected' : '' %>>Today</option>
+                        <option value="weekly" <%= filter === 'weekly' ? 'selected' : '' %>>This Week</option>
+                        <option value="monthly" <%= filter === 'monthly' ? 'selected' : '' %>>This Month</option>
+                        <option value="yearly" <%= filter === 'yearly' ? 'selected' : '' %>>This Year</option>
+                        <option value="alltime" <%= filter === 'alltime' ? 'selected' : '' %>>All Time</option>
+                    </select>
+                </div>
+            </div>
+            <p class="text-xs text-gray-500 italic">💡 These filters apply to both Best-Selling and Least Selling tables below</p>
+            <div class="flex gap-2 overflow-x-auto pb-1">
+                <button onclick="filterFoodType('all')" id="foodType-all" class="food-type-btn whitespace-nowrap px-4 py-2 rounded-lg font-semibold bg-gradient-to-r from-orange-500 to-orange-600 text-white">All Items</button>
+                <button onclick="filterFoodType('veg')" id="foodType-veg" class="food-type-btn px-4 py-2 rounded-lg font-semibold bg-gray-700 text-gray-300 hover:bg-green-500/20 hover:text-green-400">🟢 Veg</button>
+                <button onclick="filterFoodType('non-veg')" id="foodType-non-veg" class="food-type-btn px-4 py-2 rounded-lg font-semibold bg-gray-700 text-gray-300 hover:bg-red-500/20 hover:text-red-400">🔴 Non-Veg</button>
+                <button onclick="filterFoodType('beverage')" id="foodType-beverage" class="food-type-btn px-4 py-2 rounded-lg font-semibold bg-gray-700 text-gray-300 hover:bg-yellow-500/20 hover:text-yellow-400">🟡 Bev & Desserts</button>
+                <button onclick="filterFoodType('other')" id="foodType-other" class="food-type-btn px-4 py-2 rounded-lg font-semibold bg-gray-700 text-gray-300 hover:bg-gray-500/20 hover:text-gray-300">⚪ Other</button>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-gray-700">
+                        <th class="text-left py-3 px-4 text-gray-400">Rank</th>
+                        <th class="text-left py-3 px-4 text-gray-400">Item Name</th>
+                        <th class="text-right py-3 px-4 text-gray-400">Quantity Sold</th>
+                        <th class="text-right py-3 px-4 text-gray-400">Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% topItems.forEach((item, index) => { %>
+                        <tr class="border-b border-gray-700/50 hover:bg-gray-700/30">
+                            <td class="py-3 px-4">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full <%= index < 3 ? 'bg-orange-500 text-white font-bold' : 'text-gray-400' %>">
+                                    #<%= index + 1 %>
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 font-semibold" data-food-type="<%= item.foodType || 'veg' %>">
+                                <% if (item.foodType === 'veg') { %>
+                                    <span class="text-green-500">🟢</span>
+                                <% } else if (item.foodType === 'non-veg') { %>
+                                    <span class="text-red-500">🔴</span>
+                                <% } else if (item.foodType === 'beverage') { %>
+                                    <span class="text-yellow-500">🟡</span>
+                                <% } else if (item.foodType === 'other') { %>
+                                    <span class="text-gray-400">⚪</span>
+                                <% } %>
+                                <%= item.name %>
+                            </td>
+                            <td class="py-3 px-4 text-right text-blue-400"><%= item.quantity %></td>
+                            <td class="py-3 px-4 text-right text-green-400">₹<%= item.revenue.toFixed(2) %></td>
+                        </tr>
+                    <% }) %>
+                    <% if (topItems.length === 0) { %>
+                        <tr>
+                            <td colspan="4" class="py-8 text-center text-gray-500">No sales data available</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Least Selling Items -->
+    <div class="bg-gray-800 border border-gray-700 rounded-xl p-6 mt-6">
+        <div class="flex flex-col gap-4 mb-4">
+            <h3 class="text-xl font-bold text-red-400">📉 Least Selling Items</h3>
+            <div class="flex gap-2 overflow-x-auto pb-1">
+                <button onclick="filterLeastFoodType('all')" id="leastFoodType-all" class="least-food-type-btn px-4 py-2 rounded-lg font-semibold bg-gradient-to-r from-red-500 to-red-600 text-white">All Items</button>
+                <button onclick="filterLeastFoodType('veg')" id="leastFoodType-veg" class="least-food-type-btn px-4 py-2 rounded-lg font-semibold bg-gray-700 text-gray-300 hover:bg-green-500/20 hover:text-green-400">🟢 Veg</button>
+                <button onclick="filterLeastFoodType('non-veg')" id="leastFoodType-non-veg" class="least-food-type-btn px-4 py-2 rounded-lg font-semibold bg-gray-700 text-gray-300 hover:bg-red-500/20 hover:text-red-400">🔴 Non-Veg</button>
+                <button onclick="filterLeastFoodType('beverage')" id="leastFoodType-beverage" class="least-food-type-btn px-4 py-2 rounded-lg font-semibold bg-gray-700 text-gray-300 hover:bg-yellow-500/20 hover:text-yellow-400">🟡 Bev & Desserts</button>
+                <button onclick="filterLeastFoodType('other')" id="leastFoodType-other" class="least-food-type-btn px-4 py-2 rounded-lg font-semibold bg-gray-700 text-gray-300 hover:bg-gray-500/20 hover:text-gray-300">⚪ Other</button>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-gray-700">
+                        <th class="text-left py-3 px-4 text-gray-400">Rank</th>
+                        <th class="text-left py-3 px-4 text-gray-400">Item Name</th>
+                        <th class="text-right py-3 px-4 text-gray-400">Quantity Sold</th>
+                        <th class="text-right py-3 px-4 text-gray-400">Revenue</th>
+                    </tr>
+                </thead>
+                <tbody id="leastItemsTable">
+                    <% leastItems.forEach((item, index) => { %>
+                        <tr class="border-b border-gray-700/50 hover:bg-gray-700/30">
+                            <td class="py-3 px-4">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-gray-400">
+                                    #<%= index + 1 %>
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 font-semibold" data-food-type="<%= item.foodType || 'veg' %>">
+                                <% if (item.foodType === 'veg') { %>
+                                    <span class="text-green-500">🟢</span>
+                                <% } else if (item.foodType === 'non-veg') { %>
+                                    <span class="text-red-500">🔴</span>
+                                <% } else if (item.foodType === 'beverage') { %>
+                                    <span class="text-yellow-500">🟡</span>
+                                <% } else if (item.foodType === 'other') { %>
+                                    <span class="text-gray-400">⚪</span>
+                                <% } %>
+                                <%= item.name %>
+                            </td>
+                            <td class="py-3 px-4 text-right text-blue-400"><%= item.quantity %></td>
+                            <td class="py-3 px-4 text-right text-green-400">₹<%= item.revenue.toFixed(2) %></td>
+                        </tr>
+                    <% }) %>
+                    <% if (leastItems.length === 0) { %>
+                        <tr>
+                            <td colspan="4" class="py-8 text-center text-gray-500">No sales data available</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+var AMP = String.fromCharCode(38);
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('filterSelect').addEventListener('change', changeFilter);
+    document.getElementById('topSelect').addEventListener('change', changeTop);
+    document.getElementById('monthSelect').addEventListener('change', changeMonth);
+    
+    var prevBtn = document.getElementById('prevWeekBtn');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+            changeWeek(<%= weekOffset - 1 %>);
+        });
+    }
+    
+    var nextBtn = document.getElementById('nextWeekBtn');
+    if (nextBtn && !nextBtn.disabled) {
+        nextBtn.addEventListener('click', function() {
+            changeWeek(<%= weekOffset + 1 %>);
+        });
+    }
+});
+
+function changeFilter() {
+    var filter = document.getElementById('filterSelect').value;
+    var top = document.getElementById('topSelect').value;
+    window.location.href = '/admin/sales-analysis?filter=' + filter + AMP + 'top=' + top;
+}
+
+function changeTop() {
+    var filter = document.getElementById('filterSelect').value;
+    var top = document.getElementById('topSelect').value;
+    window.location.href = '/admin/sales-analysis?filter=' + filter + AMP + 'top=' + top;
+}
+
+function changeWeek(offset) {
+    var urlParams = new URLSearchParams(window.location.search);
+    var filter = urlParams.get('filter') || 'alltime';
+    var top = urlParams.get('top') || '10';
+    var month = urlParams.get('month') || '';
+    var url = '/admin/sales-analysis?filter=' + filter + AMP + 'top=' + top + AMP + 'week=' + offset;
+    if (month) {
+        url = url + AMP + 'month=' + month;
+    }
+    window.location.href = url;
+}
+
+function changeMonth() {
+    var month = document.getElementById('monthSelect').value;
+    var urlParams = new URLSearchParams(window.location.search);
+    var filter = urlParams.get('filter') || 'alltime';
+    var top = urlParams.get('top') || '10';
+    var week = urlParams.get('week') || '0';
+    window.location.href = '/admin/sales-analysis?filter=' + filter + AMP + 'top=' + top + AMP + 'week=' + week + AMP + 'month=' + month;
+}
+
+function filterFoodType(type) {
+    document.querySelectorAll('.food-type-btn').forEach(btn => {
+        btn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'text-white');
+        btn.classList.add('bg-gray-700', 'text-gray-300');
+    });
+    
+    const activeBtn = document.getElementById('foodType-' + type);
+    activeBtn.classList.remove('bg-gray-700', 'text-gray-300');
+    activeBtn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'text-white');
+    
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const foodTypeCell = row.querySelector('[data-food-type]');
+        if (!foodTypeCell) {
+            row.style.display = '';
+            return;
+        }
+        const itemType = foodTypeCell.getAttribute('data-food-type');
+        if (type === 'all' || itemType === type) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function filterLeastFoodType(type) {
+    document.querySelectorAll('.least-food-type-btn').forEach(btn => {
+        btn.classList.remove('bg-gradient-to-r', 'from-red-500', 'to-red-600', 'text-white');
+        btn.classList.add('bg-gray-700', 'text-gray-300');
+    });
+    
+    const activeBtn = document.getElementById('leastFoodType-' + type);
+    activeBtn.classList.remove('bg-gray-700', 'text-gray-300');
+    activeBtn.classList.add('bg-gradient-to-r', 'from-red-500', 'to-red-600', 'text-white');
+    
+    const rows = document.querySelectorAll('#leastItemsTable tr');
+    rows.forEach(row => {
+        const foodTypeCell = row.querySelector('[data-food-type]');
+        if (!foodTypeCell) {
+            row.style.display = '';
+            return;
+        }
+        const itemType = foodTypeCell.getAttribute('data-food-type');
+        if (type === 'all' || itemType === type) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+
+<% if (pieChartData.length > 0) { %>
+<script>
+var colors = ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#f59e0b', '#06b6d4', '#84cc16', '#f43f5e', '#6366f1'];
+var pieLabels = [];
+var pieValues = [];
+<% pieChartData.forEach(function(cat) { %>
+pieLabels.push('<%= cat.name %>');
+pieValues.push(<%= cat.revenue %>);
+<% }); %>
+
+var pieData = {
+    labels: pieLabels,
+    datasets: [{
+        data: pieValues,
+        backgroundColor: colors.slice(0, <%= pieChartData.length %>),
+        borderColor: '#1f2937',
+        borderWidth: 2
+    }]
+};
+
+var pieConfig = {
+    type: 'pie',
+    data: pieData,
+    options: {
+        responsive: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        var label = context.label || '';
+                        var value = context.parsed || 0;
+                        var total = context.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                        var percentage = ((value / total) * 100).toFixed(1);
+                        return label + ': ₹' + value.toFixed(2) + ' (' + percentage + '%)';
+                    }
+                }
+            }
+        }
+    }
+};
+
+var pieChart = new Chart(document.getElementById('pieChart'), pieConfig);
+</script>
+<% } %>
+
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Menu Item</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-10">
+
+<h1 class="text-3xl mb-6">Add Menu Item</h1>
+
+<% if (typeof error !== 'undefined' && error) { %>
+    <div class="bg-red-500 text-white p-4 rounded mb-4">
+        <%= error %>
+    </div>
+<% } %>
+
+<form action="/admin/menu/add" method="POST" enctype="multipart/form-data" class="space-y-4">
+    
+    <select name="category"
+        class="w-full p-2 text-black rounded"
+        required>
+        <option value="">Select Category</option>
+        <% categories.forEach(cat => { %>
+            <option value="<%= cat._id %>">
+                <%= cat.name %>
+            </option>
+        <% }) %>
+    </select>
+
+    <input type="text" name="name"
+        placeholder="Item Name"
+        class="w-full p-2 text-black rounded"
+        required>
+
+    <input type="number" name="price"
+        placeholder="Price"
+        class="w-full p-2 text-black rounded"
+        required>
+
+    <select name="foodType"
+        class="w-full p-2 text-black rounded"
+        required>
+        <option value="">Select Food Type</option>
+        <option value="veg">🟢 Vegetarian</option>
+        <option value="non-veg">🔴 Non-Vegetarian</option>
+        <option value="beverage">🟡 Beverages & Desserts</option>
+        <option value="other">⚪ Other</option>
+    </select>
+    
+    <input type="file" name="image"
+    class="w-full p-2 text-black rounded">
+    <p class="text-gray-400 text-sm">Maximum file size: 2MB. Supported formats: JPG, PNG, WebP</p>
+
+    <textarea name="description"
+        placeholder="Description"
+        class="w-full p-2 text-black rounded"></textarea>
+
+    <button class="bg-green-500 px-4 py-2 rounded">
+        Save Item
+    </button>
+</form>
+
+<a href="<%= backUrl || '/admin/menu-management' %>" class="block mt-6 text-blue-400">
+    Back
+</a>
+
+</body>
+
+</html>

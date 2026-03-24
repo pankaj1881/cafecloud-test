@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Booking - <%= settings?.cafeName %></title>
+    <%- include("./partials/favicon") %>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .gradient-text {
+            background: linear-gradient(135deg, #38bdf8 0%, #fb923c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen">
+
+<%- include("partials/navbar") %>
+
+<div class="container mx-auto px-6 py-24 flex items-center justify-center min-h-[80vh]">
+    <div class="text-center max-w-3xl">
+        <div class="mb-8 pulse">
+            <svg class="w-32 h-32 mx-auto text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+        </div>
+        <h1 class="text-5xl md:text-7xl font-extrabold mb-6 gradient-text">Booking Coming Soon</h1>
+        <div class="w-32 h-1 bg-gradient-to-r from-sky-400 to-orange-500 mx-auto mb-8 rounded-full"></div>
+        <p class="text-gray-400 text-lg md:text-xl leading-relaxed mb-8">
+            Online table & hall booking will be available shortly. Stay tuned for an amazing experience!
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <a href="/menu" class="px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full font-semibold shadow-lg hover:shadow-orange-500/50 transition-all duration-300 hover:scale-110">
+                Explore Menu
+            </a>
+            <a href="/" class="px-8 py-4 bg-gradient-to-r from-sky-500 to-sky-600 rounded-full font-semibold shadow-lg hover:shadow-sky-500/50 transition-all duration-300 hover:scale-110">
+                Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+
+<%- include("partials/footer") %>
+
+</body>
+
+</html>

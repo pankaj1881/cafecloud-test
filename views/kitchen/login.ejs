@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kitchen Login - Cafe Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full mx-4">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-2">
+                <span class="text-sky-400">Kitchen</span> <span class="text-orange-500">Login</span>
+            </h1>
+            <p class="text-gray-400">Enter password to access kitchen dashboard</p>
+        </div>
+        
+        <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 border border-gray-700">
+            <% if (error) { %>
+                <div class="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded-lg mb-6">
+                    <%= error %>
+                </div>
+            <% } %>
+            
+            <form action="/kitchen/login" method="POST" class="space-y-6">
+                <div>
+                    <label class="block text-gray-300 font-semibold mb-2">Password</label>
+                    <input type="password" name="password" required 
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-sky-400 focus:outline-none">
+                </div>
+                
+                <button type="submit" 
+                    class="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3 rounded-lg transition-all">
+                    Login
+                </button>
+            </form>
+        </div>
+        
+        <div class="text-center mt-6">
+            <a href="/" class="text-gray-400 hover:text-sky-400">← Back to Home</a>
+        </div>
+    </div>
+</body>
+</html>

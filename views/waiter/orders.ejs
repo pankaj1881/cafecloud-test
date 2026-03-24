@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Orders - Cafe Cloud</title>
+    <%- include("../partials/favicon") %>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#f97316">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/logo.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen">
+    <nav class="bg-gray-900 border-b border-gray-800 p-4" id="ordersNav">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold">
+                <span class="text-sky-400">All</span> <span class="text-orange-500">Orders</span>
+            </h1>
+            <a href="/waiter/dashboard" class="bg-gray-700 hover:bg-gray-600 px-3 md:px-4 py-2 rounded-lg text-sm md:text-base">← Back</a>
+        </div>
+    </nav>
+
+    <script>
+        // Hide navigation if loaded in iframe
+        if (window.self !== window.top) {
+            document.getElementById('ordersNav').style.display = 'none';
+        }
+    </script>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Date Filter -->
+        <div class="bg-gray-800 rounded-xl p-4 md:p-6 mb-6">
+            <form method="GET" action="/waiter/orders" class="flex flex-col md:flex-row gap-3 md:gap-4 md:items-end">
+                <div class="flex-1">
+                    <label class="block text-gray-300 font-semibold mb-2 text-sm md:text-base">From Date</label>
+                    <input type="date" name="from" value="<%= from %>" 
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 md:px-4 py-2 md:py-2 text-white text-sm md:text-base">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-gray-300 font-semibold mb-2 text-sm md:text-base">To Date</label>
+                    <input type="date" name="to" value="<%= to %>" 
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 md:px-4 py-2 md:py-2 text-white text-sm md:text-base">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-gray-300 font-semibold mb-2 text-sm md:text-base">Order Type</label>
+                    <select name="orderType" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 md:px-4 py-2 md:py-2 text-white text-sm md:text-base">
+                        <option value="all" <%= orderType === 'all' ? 'selected' : '' %>>All Orders</option>
+                        <option value="dine-in" <%= orderType === 'dine-in' ? 'selected' : '' %>>Dine-in Only</option>
+                        <option value="parcel" <%= orderType === 'parcel' ? 'selected' : '' %>>Parcel Only</option>
+                        <option value="hall" <%= orderType === 'hall' ? 'selected' : '' %>>Hall Bookings Only</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 md:gap-4">
+                    <button type="submit" class="flex-1 md:flex-none bg-sky-600 hover:bg-sky-700 px-4 md:px-6 py-2 rounded-lg font-bold text-sm md:text-base">
+                        Filter
+                    </button>
+                    <% if (currentView === 'today') { %>
+                        <a href="/waiter/orders?view=yesterday" class="flex-1 md:flex-none bg-orange-600 hover:bg-orange-700 px-4 md:px-6 py-2 rounded-lg font-bold text-center text-sm md:text-base">
+                            Yesterday
+                        </a>
+                    <% } else { %>
+                        <a href="/waiter/orders" class="flex-1 md:flex-none bg-green-600 hover:bg-green-700 px-4 md:px-6 py-2 rounded-lg font-bold text-center text-sm md:text-base">
+                            Today
+                        </a>
+                    <% } %>
+                </div>
+            </form>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="bg-gray-800 rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm md:text-base">
+                    <thead class="bg-gray-900">
+                        <tr>
+                            <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs md:text-base">Order ID</th>
+                            <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs md:text-base">Type</th>
+                            <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs md:text-base">Table/Phone</th>
+                            <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs md:text-base">Items</th>
+                            <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs md:text-base">Amount</th>
+                            <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs md:text-base">Status</th>
+                            <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs md:text-base">Time</th>
+                            <th class="px-2 md:px-4 py-2 md:py-3 text-left text-xs md:text-base">Bill</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (orders.length === 0 && hallBookings.length === 0) { %>
+                            <tr>
+                                <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                                    No orders found for selected date range
+                                </td>
+                            </tr>
+                        <% } else { %>
+                            <!-- Hall Bookings -->
+                            <% hallBookings.forEach(booking => { %>
+                                <tr class="border-t border-gray-700 hover:bg-gray-900 bg-pink-900/10">
+                                    <td class="px-2 md:px-4 py-2 md:py-3 font-bold text-xs md:text-base"><%= booking.bookingId %></td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3">
+                                        <span class="bg-pink-500/20 text-pink-400 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs">Hall</span>
+                                    </td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3 text-xs md:text-base">
+                                        <%= booking.hallId.name %>
+                                    </td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm">
+                                        <%= booking.customerName %>
+                                    </td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3 font-bold text-orange-500 text-xs md:text-base">₹<%= booking.finalAmount %></td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3 text-blue-400 font-semibold text-xs md:text-base">Billed</td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm text-gray-400">
+                                        <%= format12Hour(booking.endTime) %>
+                                    </td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3">
+                                        <% if (billMap['hall_' + booking._id.toString()]) { %>
+                                            <a href="/admin/bill/<%= billMap['hall_' + booking._id.toString()] %>/view" target="_blank"
+                                               class="bg-blue-600 hover:bg-blue-700 text-white px-2 md:px-3 py-1 rounded text-xs md:text-sm font-bold">
+                                                View Bill
+                                            </a>
+                                        <% } else { %>
+                                            <span class="text-gray-600 text-xs md:text-sm">-</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                            
+                            <!-- Regular Orders -->
+                            <% orders.forEach(order => { 
+                                let statusColor = 'text-yellow-400';
+                                if (order.status === 'served') statusColor = 'text-green-400';
+                                if (order.status === 'billed') statusColor = 'text-blue-400';
+                            %>
+                                <tr class="border-t border-gray-700 hover:bg-gray-900">
+                                    <td class="px-2 md:px-4 py-2 md:py-3 font-bold text-xs md:text-base"><%= order.orderId %></td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3">
+                                        <% if (order.orderType === 'dine-in') { %>
+                                            <span class="bg-orange-500/20 text-orange-400 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs">Dine-in</span>
+                                        <% } else if (order.orderType === 'parcel') { %>
+                                            <span class="bg-purple-500/20 text-purple-400 px-1.5 md:px-2 py-0.5 md:py-1 rounded text-xs">Parcel</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3 text-xs md:text-base">
+                                        <% if (order.orderType === 'dine-in') { %>
+                                            Table <%= order.tableNumber %>
+                                        <% } else { %>
+                                            <%= order.customerPhone || 'N/A' %>
+                                        <% } %>
+                                    </td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm">
+                                        <%= order.items.length %> items
+                                    </td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3 font-bold text-orange-500 text-xs md:text-base">₹<%= order.totalAmount %></td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3 <%= statusColor %> font-semibold text-xs md:text-base"><%= order.status %></td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm text-gray-400">
+                                        <%= new Date(order.orderTakenAt).toLocaleString('en-IN', { 
+                                            hour: '2-digit', 
+                                            minute: '2-digit',
+                                            day: '2-digit',
+                                            month: 'short'
+                                        }) %>
+                                    </td>
+                                    <td class="px-2 md:px-4 py-2 md:py-3">
+                                        <% if (billMap[order._id.toString()]) { %>
+                                            <a href="/admin/bill/<%= billMap[order._id.toString()] %>/view"
+                                               class="bg-blue-600 hover:bg-blue-700 text-white px-2 md:px-3 py-1 rounded text-xs md:text-sm font-bold">
+                                                View Bill
+                                            </a>
+                                        <% } else { %>
+                                            <span class="text-gray-600 text-xs md:text-sm">-</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Waiter Management - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow-md p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Waiter Management</h1>
+            <a href="/admin/dashboard" class="text-blue-600 hover:text-blue-800">← Back to Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Add Waiter Form -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Add New Waiter</h2>
+            <form action="/admin/waiters/add" method="POST" class="flex gap-4 items-end">
+                <div class="flex-1">
+                    <label class="block text-gray-700 font-semibold mb-2">Waiter Name *</label>
+                    <input type="text" name="name" required
+                        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none">
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-lg">
+                    Add Waiter
+                </button>
+            </form>
+        </div>
+
+        <!-- Waiters List -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-800 text-white">
+                    <tr>
+                        <th class="px-4 py-3 text-left">Name</th>
+                        <th class="px-4 py-3 text-left">Status</th>
+                        <th class="px-4 py-3 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (waiters.length === 0) { %>
+                        <tr>
+                            <td colspan="3" class="px-4 py-8 text-center text-gray-500">No waiters added yet</td>
+                        </tr>
+                    <% } else { %>
+                        <% waiters.forEach(waiter => { %>
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="px-4 py-3 font-semibold"><%= waiter.name %></td>
+                                <td class="px-4 py-3">
+                                    <% if (waiter.isActive) { %>
+                                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">Active</span>
+                                    <% } else { %>
+                                        <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold">Inactive</span>
+                                    <% } %>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <button onclick="toggleStatus('<%= waiter._id %>')" 
+                                        class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm mr-2">
+                                        Toggle
+                                    </button>
+                                    <a href="/admin/waiters/delete/<%= waiter._id %>" 
+                                        onclick="return confirm('Delete this waiter?')"
+                                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                                        Delete
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function toggleStatus(waiterId) {
+            fetch(`/admin/waiters/toggle/${waiterId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) location.reload();
+                });
+        }
+    </script>
+</body>
+</html>

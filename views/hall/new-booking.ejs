@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Hall Booking - Cafe Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen">
+    <!-- Global Loading Overlay -->
+    <div id="pageLoadingOverlay" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="text-6xl mb-4 spinner">⚙️</div>
+            <div class="text-2xl font-bold text-white">Loading...</div>
+        </div>
+    </div>
+    
+    <nav class="bg-gray-900 border-b border-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">
+                <span class="text-sky-400">New</span> <span class="text-orange-500">Booking</span>
+            </h1>
+            <a href="/waiter/dashboard" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 text-lg font-bold rounded-lg">Go to Main Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <form id="bookingForm" class="bg-gray-800 rounded-xl p-6 shadow-lg">
+            <h2 class="text-2xl font-bold mb-6">Booking Details</h2>
+            
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-bold mb-2">Hall <span class="text-red-500">*</span></label>
+                    <select name="hallId" id="hallId" required class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg">
+                        <option value="">Select Hall</option>
+                        <% halls.forEach(hall => { %>
+                            <option value="<%= hall._id %>" data-base="<%= hall.baseRatePerHour %>" data-ext="<%= hall.extensionRatePerHour %>">
+                                <%= hall.name %> (Cap: <%= hall.capacity %>) - ₹<%= hall.baseRatePerHour %>/hr
+                            </option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Booking Date <span class="text-red-500">*</span></label>
+                    <input type="date" name="bookingDate" id="bookingDate" required min="<%= new Date().toISOString().split('T')[0] %>" class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg">
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-bold mb-2">Start Time <span class="text-red-500">*</span></label>
+                    <div class="flex gap-2">
+                        <select name="startHour" id="startHour" required class="flex-1 bg-gray-700 text-white px-4 py-3 rounded-lg">
+                            <option value="">Hour</option>
+                            <% for(let i = 1; i <= 12; i++) { %>
+                                <option value="<%= i %>"><%= i %></option>
+                            <% } %>
+                        </select>
+                        <select name="startMinute" id="startMinute" required class="flex-1 bg-gray-700 text-white px-4 py-3 rounded-lg">
+                            <option value="00">00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                        <select name="startPeriod" id="startPeriod" required class="flex-1 bg-gray-700 text-white px-4 py-3 rounded-lg">
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">End Time <span class="text-red-500">*</span></label>
+                    <div class="flex gap-2">
+                        <select name="endHour" id="endHour" required class="flex-1 bg-gray-700 text-white px-4 py-3 rounded-lg">
+                            <option value="">Hour</option>
+                            <% for(let i = 1; i <= 12; i++) { %>
+                                <option value="<%= i %>"><%= i %></option>
+                            <% } %>
+                        </select>
+                        <select name="endMinute" id="endMinute" required class="flex-1 bg-gray-700 text-white px-4 py-3 rounded-lg">
+                            <option value="00">00</option>
+                            <option value="15">15</option>
+                            <option value="30">30</option>
+                            <option value="45">45</option>
+                        </select>
+                        <select name="endPeriod" id="endPeriod" required class="flex-1 bg-gray-700 text-white px-4 py-3 rounded-lg">
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4 bg-blue-900/30 border border-blue-500 rounded-lg p-3">
+                <div class="text-sm text-blue-300">
+                    ⓘ Min: <%= settings?.hallBookingSettings?.minimumBookingHours || 2 %> hrs | Buffer: <%= settings?.hallBookingSettings?.bufferTimeMinutes || 30 %> mins | 
+                    <span id="calcHours"></span>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-bold mb-2">Customer Name <span class="text-red-500">*</span></label>
+                    <input type="text" name="customerName" required class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Customer Phone <span class="text-red-500">*</span></label>
+                    <div class="flex">
+                        <span class="inline-flex items-center px-4 bg-gray-600 border border-gray-500 border-r-0 rounded-l-lg font-bold">+91</span>
+                        <input type="tel" name="customerPhone" required pattern="[0-9]{10}" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" placeholder="10 digits" class="flex-1 bg-gray-700 text-white px-4 py-3 rounded-r-lg border border-gray-500 border-l-0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-bold mb-2">Other Charges (₹)</label>
+                    <input type="number" name="otherCharges" min="0" value="0" class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Decoration (₹)</label>
+                    <input type="number" name="decorationCharges" min="0" value="0" class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold mb-2">Cake (₹)</label>
+                    <input type="number" name="cakeCharges" min="0" value="0" class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-bold mb-2">Advance Amount (₹) <span class="text-red-500">*</span></label>
+                <input type="number" name="advanceAmount" required min="0" class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-bold mb-2">Special Requirements</label>
+                <textarea name="specialRequirements" rows="2" class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg"></textarea>
+            </div>
+
+            <!-- Food Order Section -->
+            <div class="border-t border-gray-700 pt-6 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Food Order (Optional)</h2>
+                    <button type="button" onclick="toggleFoodOrder()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-bold">
+                        + Add Food
+                    </button>
+                </div>
+                
+                <div id="foodOrderSection" class="hidden">
+                    <div class="mb-4">
+                        <label class="block text-sm font-bold mb-2">Category</label>
+                        <select id="categoryFilter" class="w-full bg-gray-700 text-white px-4 py-3 rounded-lg">
+                            <option value="">All Categories</option>
+                            <% categories.forEach(cat => { %>
+                                <option value="<%= cat._id %>"><%= cat.name %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+
+                    <div id="menuItems" class="grid md:grid-cols-2 gap-3 mb-4 max-h-96 overflow-y-auto">
+                        <% menuItems.forEach(item => { %>
+                            <% if (item.category) { %>
+                            <div class="menu-item bg-gray-700 p-3 rounded-lg" data-category="<%= item.category._id %>">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="flex-1">
+                                        <div class="font-bold"><%= item.name %></div>
+                                        <div class="text-sm text-gray-300">₹<%= item.price %></div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" onclick="changeQty('<%= item._id %>', -1)" class="bg-red-600 hover:bg-red-700 w-8 h-8 rounded font-bold">-</button>
+                                        <span id="qty-<%= item._id %>" class="w-8 text-center font-bold">0</span>
+                                        <button type="button" onclick="changeQty('<%= item._id %>', 1)" class="bg-green-600 hover:bg-green-700 w-8 h-8 rounded font-bold">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <% } %>
+                        <% }); %>
+                    </div>
+
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <div class="text-xl font-bold">Food Total: ₹<span id="foodTotal">0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="errorMsg" class="hidden mb-4 bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded-lg"></div>
+
+            <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 rounded-lg text-lg">
+                <span class="btn-text">Create Booking</span>
+                <span class="btn-spinner hidden spinner">⚙️</span>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const menuData = <%- JSON.stringify(menuItems.filter(i => i.category).map(i => ({ id: i._id.toString(), name: i.name, price: i.price, category: i.category._id.toString() }))) %>;
+        const minHours = <%= settings?.hallBookingSettings?.minimumBookingHours || 2 %>;
+        let foodItems = {};
+
+        function toggleFoodOrder() {
+            document.getElementById('foodOrderSection').classList.toggle('hidden');
+        }
+
+        function changeQty(itemId, delta) {
+            const item = menuData.find(i => i.id === itemId);
+            if (!foodItems[itemId]) foodItems[itemId] = { ...item, quantity: 0 };
+            foodItems[itemId].quantity = Math.max(0, foodItems[itemId].quantity + delta);
+            document.getElementById(`qty-${itemId}`).textContent = foodItems[itemId].quantity;
+            if (foodItems[itemId].quantity === 0) delete foodItems[itemId];
+            updateFoodTotal();
+        }
+
+        function updateFoodTotal() {
+            const total = Object.values(foodItems).reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            document.getElementById('foodTotal').textContent = total;
+        }
+
+        document.getElementById('categoryFilter').addEventListener('change', (e) => {
+            const cat = e.target.value;
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.style.display = !cat || item.dataset.category === cat ? 'block' : 'none';
+            });
+        });
+
+        document.getElementById('startHour').addEventListener('change', calcHours);
+        document.getElementById('startMinute').addEventListener('change', calcHours);
+        document.getElementById('startPeriod').addEventListener('change', calcHours);
+        document.getElementById('endHour').addEventListener('change', calcHours);
+        document.getElementById('endMinute').addEventListener('change', calcHours);
+        document.getElementById('endPeriod').addEventListener('change', calcHours);
+
+        function convert12to24(hour, minute, period) {
+            let h = parseInt(hour);
+            if (period === 'AM' && h === 12) h = 0;
+            if (period === 'PM' && h !== 12) h += 12;
+            return `${String(h).padStart(2, '0')}:${minute}`;
+        }
+
+        function calcHours() {
+            const startHour = document.getElementById('startHour').value;
+            const startMinute = document.getElementById('startMinute').value;
+            const startPeriod = document.getElementById('startPeriod').value;
+            const endHour = document.getElementById('endHour').value;
+            const endMinute = document.getElementById('endMinute').value;
+            const endPeriod = document.getElementById('endPeriod').value;
+            
+            if (startHour && endHour) {
+                const start = convert12to24(startHour, startMinute, startPeriod);
+                const end = convert12to24(endHour, endMinute, endPeriod);
+                const [sh, sm] = start.split(':').map(Number);
+                const [eh, em] = end.split(':').map(Number);
+                const hours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+                document.getElementById('calcHours').textContent = `Duration: ${hours} hours`;
+            }
+        }
+
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.classList.add('hidden');
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.querySelector('.btn-text').classList.add('hidden');
+            submitBtn.querySelector('.btn-spinner').classList.remove('hidden');
+            submitBtn.disabled = true;
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            // Convert 12-hour to 24-hour format
+            data.startTime = convert12to24(data.startHour, data.startMinute, data.startPeriod);
+            data.endTime = convert12to24(data.endHour, data.endMinute, data.endPeriod);
+
+            // Validate hours
+            const [sh, sm] = data.startTime.split(':').map(Number);
+            const [eh, em] = data.endTime.split(':').map(Number);
+            const hours = ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+            if (hours < minHours) {
+                errorMsg.textContent = `Minimum ${minHours} hours required`;
+                errorMsg.classList.remove('hidden');
+                submitBtn.querySelector('.btn-text').classList.remove('hidden');
+                submitBtn.querySelector('.btn-spinner').classList.add('hidden');
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // Check availability
+            const availCheck = await fetch('/hall/bookings/check-availability', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    hallId: data.hallId,
+                    bookingDate: data.bookingDate,
+                    startTime: data.startTime,
+                    endTime: data.endTime
+                })
+            }).then(r => r.json());
+
+            if (!availCheck.available) {
+                errorMsg.textContent = availCheck.message;
+                errorMsg.classList.remove('hidden');
+                submitBtn.querySelector('.btn-text').classList.remove('hidden');
+                submitBtn.querySelector('.btn-spinner').classList.add('hidden');
+                submitBtn.disabled = false;
+                return;
+            }
+
+            // Add food items
+            data.foodItems = Object.values(foodItems).map(item => ({
+                menuItemId: item.id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                status: 'pending'
+            }));
+
+            // Create booking
+            const result = await fetch('/hall/bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(r => r.json());
+
+            if (result.success) {
+                alert(`Booking created! ID: ${result.bookingId}`);
+                window.location.href = '/waiter/dashboard';
+            } else {
+                errorMsg.textContent = result.error || 'Error creating booking';
+                errorMsg.classList.remove('hidden');
+                submitBtn.querySelector('.btn-text').classList.remove('hidden');
+                submitBtn.querySelector('.btn-spinner').classList.add('hidden');
+                submitBtn.disabled = false;
+            }
+        });
+        
+        // Add loading overlay to navigation links
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('pageLoadingOverlay').classList.add('hidden');
+            document.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function() {
+                    document.getElementById('pageLoadingOverlay').classList.remove('hidden');
+                });
+            });
+        });
+        window.addEventListener('pageshow', function(e) { if (e.persisted) document.getElementById('pageLoadingOverlay').classList.add('hidden'); });
+    </script>
+</body>
+</html>

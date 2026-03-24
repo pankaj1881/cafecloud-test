@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manage Announcements</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-10">
+
+  <div class="max-w-3xl mx-auto bg-white shadow-xl rounded-xl p-8">
+
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-800">
+        ☁️ Cloud Announcement Bubble
+      </h1>
+      <a href="/admin/dashboard" class="text-blue-600 hover:text-blue-800 font-medium">
+        ← Back to Dashboard
+      </a>
+    </div>
+
+    <% if (success) { %>
+      <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+        ✓ Announcement saved successfully!
+      </div>
+    <% } %>
+    
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+        ✗ <%= error %>
+      </div>
+    <% } %>
+
+    <form method="POST" action="/admin/announcements" class="space-y-4">
+        
+      <div class="mb-4">
+        <label class="flex items-center space-x-2">
+          <input type="checkbox" name="announcementEnabled" value="true" <%= settings?.announcement?.enabled ? 'checked' : '' %> class="w-5 h-5">
+          <span class="text-gray-700 font-medium">Enable Announcement</span>
+        </label>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-gray-700 font-medium">Type</label>
+          <select name="announcementType" class="w-full border rounded px-4 py-2 focus:ring-2 focus:ring-blue-500">
+            <option value="offer" <%= settings?.announcement?.type === 'offer' ? 'selected' : '' %>>🟡 Offer</option>
+            <option value="closure" <%= settings?.announcement?.type === 'closure' ? 'selected' : '' %>>🔴 Closure</option>
+            <option value="announcement" <%= settings?.announcement?.type === 'announcement' ? 'selected' : '' %>>🔵 Announcement</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="block text-gray-700 font-medium">Start Date *</label>
+          <input type="date" name="announcementStartDate" value="<%= settings?.announcement?.startDate ? new Date(settings.announcement.startDate).toISOString().split('T')[0] : '' %>" min="<%= new Date().toISOString().split('T')[0] %>" required class="w-full border rounded px-4 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-gray-700 font-medium">End Date *</label>
+          <input type="date" name="announcementEndDate" value="<%= settings?.announcement?.endDate ? new Date(settings.announcement.endDate).toISOString().split('T')[0] : '' %>" min="<%= new Date().toISOString().split('T')[0] %>" required class="w-full border rounded px-4 py-2 focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+      <p class="text-xs text-gray-500 mt-1">💡 For single-day announcements, set the same date for both start and end</p>
+
+      <div class="mt-4">
+        <label class="block text-gray-700 font-medium">Title</label>
+        <input type="text" name="announcementTitle" value="<%= settings?.announcement?.title || '' %>" placeholder="Today's Special Offer!" class="w-full border rounded px-4 py-2 focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div class="mt-4">
+        <label class="block text-gray-700 font-medium">Description</label>
+        <textarea name="announcementDescription" rows="3" placeholder="20% off on all pizzas!" class="w-full border rounded px-4 py-2 focus:ring-2 focus:ring-blue-500"><%= settings?.announcement?.description || '' %></textarea>
+      </div>
+
+      <button type="submit"
+        class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">
+        Save Announcement
+      </button>
+
+    </form>
+
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hall Bill - <%= booking.bookingId %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-4xl mx-auto p-4">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <!-- Header -->
+            <div class="text-center mb-6 border-b-2 border-gray-300 pb-4">
+                <h1 class="text-3xl font-bold text-gray-800"><%= settings?.cafeName || 'Cafe Cloud' %></h1>
+                <p class="text-gray-600"><%= settings?.address || '' %></p>
+                <p class="text-gray-600"><%= settings?.phone || '' %></p>
+            </div>
+
+            <!-- Bill Info -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                    <p class="text-sm text-gray-600">Booking ID</p>
+                    <p class="font-bold text-lg"><%= booking.bookingId %></p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-600">Date</p>
+                    <p class="font-bold"><%= new Date(booking.bookingDate).toLocaleDateString('en-IN') %></p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600">Customer</p>
+                    <p class="font-bold"><%= booking.customerName %></p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-600">Phone</p>
+                    <p class="font-bold"><%= booking.customerPhone %></p>
+                </div>
+            </div>
+
+            <!-- Hall Details -->
+            <div class="mb-6 bg-gray-50 p-4 rounded">
+                <h3 class="font-bold text-lg mb-2">Hall Booking</h3>
+                <p><strong>Hall:</strong> <%= booking.hallId.name %></p>
+                <p><strong>Time:</strong> <%= format12Hour(booking.startTime) %> - <%= format12Hour(booking.endTime) %></p>
+            </div>
+
+            <!-- Charges Breakdown -->
+            <table class="w-full mb-6">
+                <thead>
+                    <tr class="border-b-2 border-gray-300">
+                        <th class="text-left py-2">Description</th>
+                        <th class="text-right py-2">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="border-b border-gray-200">
+                        <td class="py-2">Hall Charges (<%= booking.bookedHours %>h × ₹<%= booking.baseRatePerHour %>)</td>
+                        <td class="text-right">₹<%= booking.bookedHours * booking.baseRatePerHour %></td>
+                    </tr>
+                    <% if (booking.extensionHours > 0) { %>
+                    <tr class="border-b border-gray-200">
+                        <td class="py-2">Extension (<%= booking.extensionHours %>h × ₹<%= booking.extensionRatePerHour %>)</td>
+                        <td class="text-right">₹<%= booking.extensionHours * booking.extensionRatePerHour %></td>
+                    </tr>
+                    <% } %>
+                    <% if (booking.decorationCharges > 0) { %>
+                    <tr class="border-b border-gray-200">
+                        <td class="py-2">Decoration Charges</td>
+                        <td class="text-right">₹<%= booking.decorationCharges %></td>
+                    </tr>
+                    <% } %>
+                    <% if (booking.cakeCharges > 0) { %>
+                    <tr class="border-b border-gray-200">
+                        <td class="py-2">Cake Charges</td>
+                        <td class="text-right">₹<%= booking.cakeCharges %></td>
+                    </tr>
+                    <% } %>
+                    <% if (booking.otherCharges > 0) { %>
+                    <tr class="border-b border-gray-200">
+                        <td class="py-2">Other Charges</td>
+                        <td class="text-right">₹<%= booking.otherCharges %></td>
+                    </tr>
+                    <% } %>
+                    
+                    <!-- Food Items -->
+                    <% if (booking.foodOrderIds && booking.foodOrderIds.length > 0) { %>
+                        <% booking.foodOrderIds.forEach(order => { %>
+                            <% order.items.forEach(item => { %>
+                            <tr class="border-b border-gray-200">
+                                <td class="py-2"><%= item.name %> × <%= item.quantity %></td>
+                                <td class="text-right">₹<%= item.price * item.quantity %></td>
+                            </tr>
+                            <% }); %>
+                        <% }); %>
+                    <% } %>
+                    
+                    <!-- Subtotal -->
+                    <tr class="border-t-2 border-gray-300">
+                        <td class="py-2 font-bold">Subtotal</td>
+                        <td class="text-right font-bold">₹<%= booking.finalAmount + (booking.discountValue || 0) %></td>
+                    </tr>
+                    
+                    <!-- Discount -->
+                    <% if (booking.discountValue > 0) { %>
+                    <tr>
+                        <td class="py-2 text-green-600">Discount (<%= booking.discountType === 'percentage' ? booking.discountValue + '%' : 'Fixed' %>)</td>
+                        <td class="text-right text-green-600">- ₹<%= booking.discountValue %></td>
+                    </tr>
+                    <% } %>
+                    
+                    <!-- Final Amount -->
+                    <tr class="border-t-2 border-gray-300 bg-gray-50">
+                        <td class="py-3 font-bold text-lg">Total Amount</td>
+                        <td class="text-right font-bold text-lg">₹<%= booking.finalAmount %></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Footer -->
+            <div class="text-center text-gray-600 text-sm mt-8 pt-4 border-t border-gray-300">
+                <p>Thank you for choosing <%= settings?.cafeName || 'Cafe Cloud' %>!</p>
+                <p class="mt-2">Generated on <%= new Date().toLocaleString('en-IN') %></p>
+            </div>
+
+            <!-- Print Button -->
+            <div class="text-center mt-6 no-print">
+                <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold">
+                    🖨️ Print Bill
+                </button>
+                <button onclick="window.close()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-bold ml-2">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                background: white;
+            }
+        }
+    </style>
+</body>
+</html>

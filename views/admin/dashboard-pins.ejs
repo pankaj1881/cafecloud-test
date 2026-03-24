@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard PINs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-10">
+
+<div class="max-w-2xl mx-auto">
+    <div class="mb-6">
+        <a href="/admin/dashboard" class="text-blue-400 hover:text-blue-300">&larr; Back to Dashboard</a>
+    </div>
+
+    <h1 class="text-3xl mb-6">Staff Dashboard PIN</h1>
+
+    <% if (success) { %>
+        <div class="bg-green-500 text-white p-3 rounded mb-4">
+            PIN updated successfully!
+        </div>
+    <% } %>
+
+    <form action="/admin/dashboard-pins" method="POST" class="bg-gray-800 p-6 rounded-lg">
+        <div class="mb-6">
+            <label class="block mb-2 font-semibold text-xl">Staff PIN (Waiter, Kitchen & Hall)</label>
+            <div class="relative">
+                <input type="password" id="waiterPin" name="waiterPin" 
+                    value="<%= settings.waiterPin || '1234' %>" 
+                    class="w-full p-3 rounded text-black pr-20 text-2xl text-center" 
+                    maxlength="4" pattern="[0-9]{4}" inputmode="numeric" required>
+                <button type="button" onclick="togglePin('waiterPin')" 
+                    class="absolute right-3 top-3 text-gray-600 hover:text-gray-800 text-xl">
+                    👁️ Show
+                </button>
+            </div>
+            <p class="text-sm text-gray-400 mt-2">
+                ⚠️ This single PIN is used for:<br>
+                • Waiter Dashboard (/waiter/login)<br>
+                • Kitchen Dashboard (/kitchen/dashboard)<br>
+                • Hall Booking Dashboard (/hall/bookings)
+            </p>
+            <p class="text-sm text-yellow-400 mt-3">
+                🔒 Keep this PIN secure and share only with authorized staff members.
+            </p>
+        </div>
+
+        <button type="submit" class="w-full bg-blue-500 p-4 rounded hover:bg-blue-600 text-lg font-bold">
+            Save PIN
+        </button>
+    </form>
+    
+    <div class="mt-6 bg-gray-800 p-4 rounded-lg">
+        <h3 class="font-bold mb-2">💡 How It Works:</h3>
+        <ul class="text-sm text-gray-300 space-y-1">
+            <li>• Staff logs in once at /waiter/login with this PIN</li>
+            <li>• After login, they can access Waiter, Kitchen, and Hall dashboards</li>
+            <li>• No need to login separately for each dashboard</li>
+            <li>• Session remains active until logout</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+function togglePin(id) {
+    const input = document.getElementById(id);
+    const button = input.nextElementSibling;
+    if (input.type === 'password') {
+        input.type = 'text';
+        button.textContent = '🙈 Hide';
+    } else {
+        input.type = 'password';
+        button.textContent = '👁️ Show';
+    }
+}
+</script>
+
+</body>
+</html>

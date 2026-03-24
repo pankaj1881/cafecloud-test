@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Table Management - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Global Loading Overlay -->
+    <div id="pageLoadingOverlay" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="text-6xl mb-4 spinner">⚙️</div>
+            <div class="text-2xl font-bold text-white">Loading...</div>
+        </div>
+    </div>
+    <nav class="bg-white shadow-md p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Table & Hall Management</h1>
+            <a href="/admin/dashboard" class="text-blue-600 hover:text-blue-800">← Back to Dashboard</a>
+        </div>
+    </nav>
+
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Tab Navigation -->
+        <div class="flex gap-4 mb-6">
+            <button onclick="showTab('tables')" id="tabTables" class="px-6 py-2 rounded-lg font-semibold bg-blue-600 text-white">
+                Tables
+            </button>
+            <button onclick="showTab('halls')" id="tabHalls" class="px-6 py-2 rounded-lg font-semibold bg-gray-300 text-gray-700">
+                Halls
+            </button>
+        </div>
+
+
+        <!-- Tables Section -->
+        <div id="sectionTables">
+        <!-- Set Table Count -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Set Number of Tables</h2>
+            <form action="/admin/tables/set" method="POST" class="flex gap-4 items-end">
+                <div class="flex-1">
+                    <label class="block text-gray-700 font-semibold mb-2">Total Tables</label>
+                    <input type="number" name="tableCount" min="1" max="50" value="<%= tables.length %>" required
+                        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none">
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-lg">
+                    <span class="btn-text">Update</span>
+                    <span class="btn-spinner hidden spinner">⚙️</span>
+                </button>
+            </form>
+            <p class="text-sm text-gray-600 mt-2">Current: <%= tables.length %> tables</p>
+        </div>
+
+
+        <!-- Tables Grid -->
+        <div class="grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <% tables.forEach(table => {
+                let bgColor = 'bg-green-100 border-green-500';
+                let textColor = 'text-green-700';
+                let statusText = 'Empty';
+               
+                if (table.status === 'busy') {
+                    bgColor = 'bg-yellow-100 border-yellow-500';
+                    textColor = 'text-yellow-700';
+                    statusText = 'Busy';
+                } else if (table.status === 'served') {
+                    bgColor = 'bg-blue-100 border-blue-500';
+                    textColor = 'text-blue-700';
+                    statusText = 'Served';
+                } else if (table.status === 'billing') {
+                    bgColor = 'bg-orange-100 border-orange-500';
+                    textColor = 'text-orange-700';
+                    statusText = 'Billing';
+                }
+            %>
+                <div class="<%= bgColor %> border-2 rounded-lg p-4 text-center">
+                    <div class="text-2xl font-bold <%= textColor %> mb-2">Table <%= table.tableNumber %></div>
+                    <div class="text-sm font-semibold <%= textColor %> mb-3"><%= statusText %></div>
+                    <div class="flex flex-col gap-2">
+                        <% if (table.status !== 'empty') { %>
+                            <button onclick="resetTable(<%= table.tableNumber %>, this)"
+                                class="bg-red-600 hover:bg-red-700 text-white text-sm font-bold px-4 py-2 rounded">
+                                <span class="btn-text">Reset</span>
+                                <span class="btn-spinner hidden spinner">⚙️</span>
+                            </button>
+                        <% } %>
+                        <button onclick="showQR(<%= table.tableNumber %>)"
+                            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded">
+                            📱 QR Code
+                        </button>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+        </div>
+
+
+        <!-- Halls Section -->
+        <div id="sectionHalls" class="hidden">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-bold mb-4">Hall Settings</h2>
+                <div class="flex gap-4">
+                    <a href="/admin/halls" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded-lg">
+                        Manage Halls
+                    </a>
+                    <a href="/admin/hall-settings" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-6 py-2 rounded-lg">
+                        Hall Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white p-4 border-b flex justify-end z-10">
+                <button onclick="closeQR()" class="text-gray-600 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            
+            <!-- QR Display Container (for screen view) -->
+            <div id="qrDisplayContainer" class="text-center p-6">
+                <!-- Logo and Table Number on same line -->
+                <div class="flex items-center justify-center gap-4 mb-4">
+                    <img src="/images/logo.png" alt="Cafe Logo" class="h-12 w-12 rounded-lg shadow-md">
+                    <h2 class="text-3xl font-bold text-gray-800">TABLE <span id="qrTableNumber"></span></h2>
+                </div>
+                
+                <!-- QR Code -->
+                <div class="bg-gray-50 p-4 rounded-lg mb-4 inline-block">
+                    <div id="qrCanvas" class="mx-auto flex justify-center"></div>
+                </div>
+                
+                <!-- Instructions -->
+                <div class="mb-3">
+                    <p class="text-base font-semibold text-gray-700">📲 Scan to Order</p>
+                </div>
+                
+                <!-- Review Request -->
+                <div class="mb-3">
+                    <p class="text-sm text-gray-600">⭐ <%= branding.reviewText.line1 %> <%= branding.reviewText.line2 %></p>
+                    <p class="text-base font-semibold text-blue-600"><%= branding.websiteUrl %></p>
+                </div>
+                
+                <!-- URL (visible on screen only) -->
+                <div id="qrUrlDisplay" class="text-xs text-gray-500 mt-3 p-2 bg-gray-100 rounded">
+                    <p class="font-semibold mb-1">QR Code URL:</p>
+                    <p id="qrUrl" class="break-all"></p>
+                </div>
+            </div>
+            
+            <!-- Download Buttons -->
+            <div class="sticky bottom-0 bg-white p-4 border-t">
+                <div class="flex gap-3">
+                    <button onclick="downloadQR()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg">
+                        📥 Download
+                    </button>
+                    <button onclick="printQR()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">
+                        🖨️ Print
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Branding config from server
+        const BRANDING_CONFIG = {
+            websiteUrl: '<%= branding.websiteUrl %>',
+            reviewLine1: '<%= branding.reviewText.line1 %>',
+            reviewLine2: '<%= branding.reviewText.line2 %>'
+        };
+        
+        function showTab(tab) {
+            if (tab === 'tables') {
+                document.getElementById('sectionTables').classList.remove('hidden');
+                document.getElementById('sectionHalls').classList.add('hidden');
+                document.getElementById('tabTables').className = 'px-6 py-2 rounded-lg font-semibold bg-blue-600 text-white';
+                document.getElementById('tabHalls').className = 'px-6 py-2 rounded-lg font-semibold bg-gray-300 text-gray-700';
+            } else {
+                document.getElementById('sectionTables').classList.add('hidden');
+                document.getElementById('sectionHalls').classList.remove('hidden');
+                document.getElementById('tabTables').className = 'px-6 py-2 rounded-lg font-semibold bg-gray-300 text-gray-700';
+                document.getElementById('tabHalls').className = 'px-6 py-2 rounded-lg font-semibold bg-blue-600 text-white';
+            }
+        }
+
+
+        function resetTable(tableNumber, btn) {
+            if (!confirm(`Reset Table ${tableNumber}?`)) return;
+            
+            if (btn) {
+                btn.querySelector('.btn-text').classList.add('hidden');
+                btn.querySelector('.btn-spinner').classList.remove('hidden');
+                btn.disabled = true;
+            }
+           
+            fetch(`/admin/tables/reset/${tableNumber}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) location.reload();
+                });
+        }
+
+
+        let currentTableNumber = null;
+        let qrCodeInstance = null;
+
+
+        function showQR(tableNumber) {
+            currentTableNumber = tableNumber;
+            const url = `${window.location.origin}/order?table=${tableNumber}`;
+           
+            document.getElementById('qrTableNumber').textContent = tableNumber;
+            document.getElementById('qrUrl').textContent = url;
+           
+            // Clear previous QR
+            const container = document.getElementById('qrCanvas');
+            container.innerHTML = '';
+           
+            // Generate new QR
+            qrCodeInstance = new QRCode(container, {
+                text: url,
+                width: 300,
+                height: 300,
+                colorDark: '#000000',
+                colorLight: '#FFFFFF'
+            });
+           
+            document.getElementById('qrModal').classList.remove('hidden');
+        }
+
+
+        function closeQR() {
+            document.getElementById('qrModal').classList.add('hidden');
+        }
+
+
+        function downloadQR() {
+            const canvas = document.querySelector('#qrCanvas canvas');
+            if (!canvas) return;
+            
+            // Create a new canvas for the complete design
+            const finalCanvas = document.createElement('canvas');
+            const ctx = finalCanvas.getContext('2d');
+            
+            // Set canvas size (A6 size at 300 DPI: 1240 x 1748 pixels)
+            finalCanvas.width = 800;
+            finalCanvas.height = 1100;
+            
+            // Fill white background
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+            
+            // Load and draw logo
+            const logo = new Image();
+            logo.crossOrigin = 'anonymous';
+            logo.src = '/images/logo.png';
+            
+            logo.onload = function() {
+                // Draw logo at top center with transparency
+                const logoSize = 100;
+                const logoX = (finalCanvas.width - logoSize) / 2;
+                const logoY = 50;
+                ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+                
+                // Draw table number
+                ctx.fillStyle = '#1F2937';
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`TABLE ${currentTableNumber}`, finalCanvas.width / 2, 200);
+                
+                // Draw QR code
+                const qrSize = 400;
+                const qrX = (finalCanvas.width - qrSize) / 2;
+                const qrY = 260;
+                ctx.drawImage(canvas, qrX, qrY, qrSize, qrSize);
+                
+                // Draw "Scan to Order" text
+                ctx.fillStyle = '#374151';
+                ctx.font = 'bold 32px Arial';
+                ctx.fillText('📲 Scan to Order', finalCanvas.width / 2, 720);
+                
+                // Draw review request
+                ctx.fillStyle = '#6B7280';
+                ctx.font = '24px Arial';
+                ctx.fillText(BRANDING_CONFIG.reviewLine1, finalCanvas.width / 2, 800);
+                ctx.fillText(BRANDING_CONFIG.reviewLine2, finalCanvas.width / 2, 835);
+                
+                // Draw website URL
+                ctx.fillStyle = '#2563EB';
+                ctx.font = 'bold 28px Arial';
+                ctx.fillText(BRANDING_CONFIG.websiteUrl, finalCanvas.width / 2, 890);
+                
+                // Note: QR URL is NOT included in download (security)
+                
+                // Download the final canvas
+                const link = document.createElement('a');
+                link.download = `table-${currentTableNumber}-qr.png`;
+                link.href = finalCanvas.toDataURL('image/png', 1.0);
+                link.click();
+            };
+            
+            logo.onerror = function() {
+                console.error('Logo failed to load, but continuing with QR generation');
+                // Draw table number
+                ctx.fillStyle = '#1F2937';
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`TABLE ${currentTableNumber}`, finalCanvas.width / 2, 120);
+                
+                // Draw QR code
+                const qrSize = 400;
+                const qrX = (finalCanvas.width - qrSize) / 2;
+                const qrY = 160;
+                ctx.drawImage(canvas, qrX, qrY, qrSize, qrSize);
+                
+                // Draw "Scan to Order" text
+                ctx.fillStyle = '#374151';
+                ctx.font = 'bold 32px Arial';
+                ctx.fillText('📲 Scan to Order', finalCanvas.width / 2, 620);
+                
+                // Draw review request
+                ctx.fillStyle = '#6B7280';
+                ctx.font = '24px Arial';
+                ctx.fillText(BRANDING_CONFIG.reviewLine1, finalCanvas.width / 2, 700);
+                ctx.fillText(BRANDING_CONFIG.reviewLine2, finalCanvas.width / 2, 735);
+                
+                // Draw website URL
+                ctx.fillStyle = '#2563EB';
+                ctx.font = 'bold 28px Arial';
+                ctx.fillText(BRANDING_CONFIG.websiteUrl, finalCanvas.width / 2, 790);
+                
+                // Download
+                const link = document.createElement('a');
+                link.download = `table-${currentTableNumber}-qr.png`;
+                link.href = finalCanvas.toDataURL('image/png', 1.0);
+                link.click();
+            };
+        }
+
+
+        function printQR() {
+            const canvas = document.querySelector('#qrCanvas canvas');
+            const win = window.open('', '_blank');
+            
+            // Create print-friendly HTML with branding
+            win.document.write(`
+                <html>
+                <head>
+                    <title>Table ${currentTableNumber} QR Code</title>
+                    <style>
+                        body { 
+                            text-align: center; 
+                            font-family: Arial, sans-serif; 
+                            padding: 40px;
+                            margin: 0;
+                        }
+                        .logo {
+                            width: 80px;
+                            height: 80px;
+                            margin: 0 auto 20px;
+                        }
+                        h1 { 
+                            font-size: 48px;
+                            margin: 20px 0 30px;
+                            color: #1F2937;
+                        }
+                        .qr-container {
+                            margin: 30px 0;
+                        }
+                        img.qr { 
+                            max-width: 400px;
+                            border: 2px solid #E5E7EB;
+                            padding: 20px;
+                            background: #F9FAFB;
+                        }
+                        .instruction {
+                            font-size: 24px;
+                            font-weight: bold;
+                            margin: 30px 0 20px;
+                            color: #374151;
+                        }
+                        .review-text {
+                            font-size: 18px;
+                            color: #6B7280;
+                            margin: 10px 0;
+                        }
+                        .website {
+                            font-size: 22px;
+                            font-weight: bold;
+                            color: #2563EB;
+                            margin: 15px 0;
+                        }
+                        @media print {
+                            body { padding: 20px; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <img src="/images/logo.png" alt="Logo" class="logo" onerror="this.style.display='none'">
+                    <h1>TABLE ${currentTableNumber}</h1>
+                    <div class="qr-container">
+                        <img src="${canvas.toDataURL()}" class="qr" />
+                    </div>
+                    <p class="instruction">📲 Scan to Order</p>
+                    <p class="review-text">${BRANDING_CONFIG.reviewLine1}</p>
+                    <p class="review-text">${BRANDING_CONFIG.reviewLine2}</p>
+                    <p class="website">${BRANDING_CONFIG.websiteUrl}</p>
+                </body>
+                </html>
+            `);
+            win.document.close();
+            setTimeout(() => {
+                win.print();
+                win.close();
+            }, 500);
+        }
+        
+        // Add loading to forms and links
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('pageLoadingOverlay').classList.add('hidden');
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function() {
+                    const btn = this.querySelector('button[type="submit"]');
+                    if (btn) {
+                        const textSpan = btn.querySelector('.btn-text');
+                        const spinnerSpan = btn.querySelector('.btn-spinner');
+                        if (textSpan && spinnerSpan) {
+                            textSpan.classList.add('hidden');
+                            spinnerSpan.classList.remove('hidden');
+                            btn.disabled = true;
+                        }
+                    }
+                });
+            });
+            
+            document.querySelectorAll('a[href^="/admin/"]:not([href*="logout"])').forEach(link => {
+                link.addEventListener('click', function() {
+                    if (!this.getAttribute('onclick')) {
+                        document.getElementById('pageLoadingOverlay').classList.remove('hidden');
+                    }
+                });
+            });
+        });
+        window.addEventListener('pageshow', function(e) { if (e.persisted) document.getElementById('pageLoadingOverlay').classList.add('hidden'); });
+    </script>
+</body>
+</html>
+
+
+
+

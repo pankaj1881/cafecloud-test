@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bill - <%= bill.billId %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            .no-print { display: none; }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
+        <!-- Header -->
+        <div class="text-center mb-8 border-b-2 border-gray-800 pb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2"><%= settings?.cafeName || 'Cafe Cloud' %></h1>
+            <p class="text-sm text-gray-600"><%= settings?.address || '' %></p>
+            <p class="text-sm text-gray-600">Phone: <%= settings?.phone || '' %></p>
+        </div>
+
+
+        <!-- Bill Info -->
+        <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
+            <div>
+                <p class="font-semibold">Bill No: <span class="text-blue-600"><%= bill.billId %></span></p>
+                <p class="font-semibold">Order No: <span class="text-blue-600"><%= bill.orderId.orderId %></span></p>
+            </div>
+            <div class="text-right">
+                <p>Date: <%= new Date(bill.generatedAt).toLocaleDateString() %></p>
+                <p>Time: <%= new Date(bill.generatedAt).toLocaleTimeString() %></p>
+            </div>
+        </div>
+
+
+        <% if (bill.orderId.orderType === 'dine-in') { %>
+            <p class="text-sm mb-4">Table: <span class="font-bold text-lg"><%= bill.orderId.tableNumber %></span></p>
+        <% } else { %>
+            <p class="text-sm mb-4"><span class="font-bold">Parcel Order</span></p>
+        <% } %>
+
+
+        <!-- Items Table -->
+        <table class="w-full mb-6">
+            <thead class="bg-gray-800 text-white">
+                <tr>
+                    <th class="px-4 py-2 text-left">Item</th>
+                    <th class="px-4 py-2 text-center">Qty</th>
+                    <th class="px-4 py-2 text-right">Price</th>
+                    <th class="px-4 py-2 text-right">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% bill.items.forEach(item => { %>
+                    <tr class="border-b">
+                        <td class="px-4 py-2"><%= item.name %></td>
+                        <td class="px-4 py-2 text-center"><%= item.quantity %></td>
+                        <td class="px-4 py-2 text-right">₹<%= item.price %></td>
+                        <td class="px-4 py-2 text-right font-semibold">₹<%= item.price * item.quantity %></td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+
+
+        <!-- Totals -->
+        <div class="border-t-2 border-gray-800 pt-4">
+            <div class="flex justify-between mb-2">
+                <span class="font-semibold">Subtotal:</span>
+                <span>₹<%= bill.subtotal.toFixed(2) %></span>
+            </div>
+            <div class="flex justify-between mb-2 text-sm">
+                <span>CGST (<%= bill.subtotal ? ((bill.cgst / bill.subtotal) * 100).toFixed(1) : 0 %>%):</span>
+                <span>₹<%= bill.cgst.toFixed(2) %></span>
+            </div>
+            <div class="flex justify-between mb-4 text-sm">
+                <span>SGST (<%= bill.subtotal ? ((bill.sgst / bill.subtotal) * 100).toFixed(1) : 0 %>%):</span>
+                <span>₹<%= bill.sgst.toFixed(2) %></span>
+            </div>
+            <div class="flex justify-between text-2xl font-bold border-t-2 border-gray-800 pt-4">
+                <span>Total:</span>
+                <span class="text-green-600">₹<%= bill.totalAmount.toFixed(2) %></span>
+            </div>
+        </div>
+
+
+        <!-- Payment Method -->
+        <div class="mt-6">
+            <% if (bill.paymentMethod && bill.paymentMethod !== 'pending') { %>
+                <!-- Payment Completed -->
+                <div class="text-center">
+                    <p class="text-sm">Payment Method: <span class="font-bold uppercase"><%= bill.paymentMethod %></span></p>
+                    <% if (bill.customerMobile) { %>
+                        <p class="text-sm mt-2">Customer Mobile: <span class="font-bold"><%= bill.customerMobile %></span></p>
+                    <% } %>
+                </div>
+            <% } %>
+        </div>
+
+
+        <!-- Footer -->
+        <div class="mt-8 text-center text-sm text-gray-600 border-t pt-4">
+            <p class="font-semibold">Thank you for visiting!</p>
+            <p>Please visit again</p>
+        </div>
+
+
+        <!-- Print Button -->
+        <div class="mt-6 text-center no-print">
+            <button onclick="window.print()"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-3 rounded-lg mr-4">
+                Print Bill
+            </button>
+            <a href="/admin/orders" class="bg-gray-600 hover:bg-gray-700 text-white font-bold px-8 py-3 rounded-lg inline-block">
+                Back to Orders
+            </a>
+        </div>
+    </div>
+   
+    <script>
+    // Payment functionality removed - bills are generated without payment tracking
+    </script>
+</body>
+</html>
+
+
+

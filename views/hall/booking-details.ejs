@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Details - Cafe Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen">
+    <!-- Global Loading Overlay -->
+    <div id="pageLoadingOverlay" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+        <div class="text-center">
+            <div class="text-6xl mb-4 spinner">⚙️</div>
+            <div class="text-2xl font-bold text-white">Loading...</div>
+        </div>
+    </div>
+    
+    <nav class="bg-gray-900 border-b border-gray-800 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold"><%= booking.bookingId %></h1>
+            <a href="/waiter/dashboard" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 text-lg font-bold rounded-lg">Go to Main Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Booking Info -->
+            <div class="bg-gray-800 rounded-xl p-6">
+                <h2 class="text-2xl font-bold mb-4">Booking Details</h2>
+                <div class="space-y-3">
+                    <div><span class="text-gray-400">Hall:</span> <span class="font-bold"><%= booking.hallId.name %></span></div>
+                    <div><span class="text-gray-400">Date:</span> <span class="font-bold"><%= new Date(booking.bookingDate).toLocaleDateString('en-IN') %></span></div>
+                    <div><span class="text-gray-400">Time:</span> 
+                        <span class="font-bold"><%= format12Hour(booking.startTime) %> - <%= format12Hour(booking.endTime) %></span>
+                    </div>
+                    <div><span class="text-gray-400">Customer:</span> <span class="font-bold"><%= booking.customerName %></span></div>
+                    <div><span class="text-gray-400">Phone:</span> <span class="font-bold"><%= booking.customerPhone %></span></div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-gray-700">
+                    <h3 class="font-bold mb-3">Charges</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>Hall (<%= booking.bookedHours %>h × ₹<%= booking.baseRatePerHour %>)</span>
+                            <span>₹<%= booking.bookedHours * booking.baseRatePerHour %></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Extension (<span id="extHours"><%= booking.extensionHours %></span>h × ₹<%= booking.extensionRatePerHour %>)</span>
+                            <span>₹<span id="extAmount"><%= booking.extensionHours * booking.extensionRatePerHour %></span></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Decoration</span>
+                            <span>₹<span id="decoAmount"><%= booking.decorationCharges %></span></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Cake</span>
+                            <span>₹<span id="cakeAmount"><%= booking.cakeCharges %></span></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Other Charges</span>
+                            <span>₹<span id="otherAmount"><%= booking.otherCharges || 0 %></span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 space-y-2">
+                    <button onclick="showEditModal()" class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-bold">✏️ Edit Booking</button>
+                    <button onclick="cancelBooking()" class="w-full bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-bold">❌ Cancel Booking</button>
+                </div>
+            </div>
+
+            <!-- Food Orders -->
+            <div class="bg-gray-800 rounded-xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Food Orders</h2>
+                    <button onclick="showAddFoodModal()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold">+ Add Order</button>
+                </div>
+
+                <% if (booking.foodOrderIds.length === 0) { %>
+                    <div class="text-center py-8 text-gray-400">No food orders yet</div>
+                <% } else { %>
+                    <div class="space-y-3">
+                        <% booking.foodOrderIds.forEach(order => { 
+                            // Skip orders with no items
+                            if (order.items.length === 0) return;
+                        %>
+                            <div class="bg-gray-700 p-4 rounded-lg">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div class="font-bold"><%= order.orderId %></div>
+                                    <% if (!order.sentToKitchen) { %>
+                                        <button onclick="sendToKitchen('<%= order._id %>', this)" class="bg-orange-600 hover:bg-orange-700 px-3 py-1 rounded text-sm font-bold">
+                                            <span class="btn-text">Send to Kitchen</span>
+                                            <span class="btn-spinner hidden spinner">⚙️</span>
+                                        </button>
+                                    <% } else { %>
+                                        <span class="bg-green-600 px-3 py-1 rounded text-sm font-bold">In Kitchen</span>
+                                    <% } %>
+                                </div>
+                                <div class="space-y-1 text-sm">
+                                    <% order.items.forEach((item, index) => { %>
+                                        <div class="flex justify-between items-center">
+                                            <span><%= item.name %> x<%= item.quantity %></span>
+                                            <div class="flex items-center gap-2">
+                                                <span>₹<%= item.price * item.quantity %></span>
+                                                <% if (!order.sentToKitchen) { %>
+                                                    <button onclick="removeItem('<%= order._id %>', <%= index %>)" class="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs font-bold">
+                                                        ×
+                                                    </button>
+                                                <% } %>
+                                            </div>
+                                        </div>
+                                    <% }); %>
+                                </div>
+                                <% if (order.sentToKitchen) { %>
+                                    <div class="mt-2 text-xs text-yellow-300">⚠️ Cannot modify - order sent to kitchen</div>
+                                <% } %>
+                                <div class="mt-2 pt-2 border-t border-gray-600 font-bold">Total: ₹<%= order.totalAmount %></div>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } %>
+
+                <div class="mt-4 pt-4 border-t border-gray-700">
+                    <div class="text-xl font-bold">Food Total: ₹<%= booking.foodOrderIds.reduce((sum, o) => sum + o.totalAmount, 0) %></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generate Bill -->
+        <div class="mt-6 bg-gray-800 rounded-xl p-6">
+            <h2 class="text-2xl font-bold mb-4">Generate Final Bill</h2>
+            <button onclick="showBillModal()" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 px-8 py-4 rounded-lg font-bold text-lg">
+                Generate Bill
+            </button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Edit Booking Modal -->
+    <div id="editModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4">✏️ Edit Booking</h3>
+            <div class="space-y-3 mb-4">
+                <div>
+                    <label class="block text-sm mb-1">Customer Name</label>
+                    <input type="text" id="editName" value="<%= booking.customerName %>" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">Phone</label>
+                    <div class="flex">
+                        <span class="inline-flex items-center px-4 bg-gray-600 border border-gray-500 border-r-0 rounded-l-lg font-bold">+91</span>
+                        <input type="tel" id="editPhone" value="<%= booking.customerPhone.replace('+91','') %>" maxlength="10" pattern="[0-9]{10}" placeholder="10 digits" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)" class="flex-1 bg-gray-700 px-4 py-3 rounded-r-lg border border-gray-500 border-l-0">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">Booking Date</label>
+                    <input type="date" id="editDate" value="<%= new Date(booking.bookingDate).toISOString().split('T')[0] %>" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">Start Time</label>
+                    <div class="flex gap-2">
+                        <select id="editStartHour" class="flex-1 bg-gray-700 px-3 py-3 rounded-lg">
+                            <% for(let i = 1; i <= 12; i++) { %><option value="<%= i %>"><%= i %></option><% } %>
+                        </select>
+                        <select id="editStartMin" class="flex-1 bg-gray-700 px-3 py-3 rounded-lg">
+                            <option value="00">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>
+                        </select>
+                        <select id="editStartPeriod" class="flex-1 bg-gray-700 px-3 py-3 rounded-lg">
+                            <option value="AM">AM</option><option value="PM">PM</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">End Time</label>
+                    <div class="flex gap-2">
+                        <select id="editEndHour" class="flex-1 bg-gray-700 px-3 py-3 rounded-lg">
+                            <% for(let i = 1; i <= 12; i++) { %><option value="<%= i %>"><%= i %></option><% } %>
+                        </select>
+                        <select id="editEndMin" class="flex-1 bg-gray-700 px-3 py-3 rounded-lg">
+                            <option value="00">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>
+                        </select>
+                        <select id="editEndPeriod" class="flex-1 bg-gray-700 px-3 py-3 rounded-lg">
+                            <option value="AM">AM</option><option value="PM">PM</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">Extension Hours</label>
+                    <input type="number" id="editExtHours" min="0" value="<%= booking.extensionHours %>" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">Decoration Charges (₹)</label>
+                    <input type="number" id="editDeco" min="0" value="<%= booking.decorationCharges %>" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">Cake Charges (₹)</label>
+                    <input type="number" id="editCake" min="0" value="<%= booking.cakeCharges %>" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">Other Charges (₹)</label>
+                    <input type="number" id="editOther" min="0" value="<%= booking.otherCharges || 0 %>" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">Advance Amount (₹)</label>
+                    <input type="number" id="editAdvance" min="0" value="<%= booking.advanceAmount %>" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">Special Requirements</label>
+                    <textarea id="editRequirements" rows="2" class="w-full bg-gray-700 px-4 py-3 rounded-lg"><%= booking.specialRequirements || '' %></textarea>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="saveEdit(this)" class="flex-1 bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold">
+                    <span class="btn-text">Save</span>
+                    <span class="btn-spinner hidden spinner">⚙️</span>
+                </button>
+                <button onclick="closeModal('editModal')" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg font-bold">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="billModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 my-8">
+            <h3 class="text-xl font-bold mb-4">Final Bill</h3>
+            <div class="space-y-2 mb-4 text-sm" id="billBreakdown"></div>
+            <div class="space-y-3 mb-4">
+                <div>
+                    <label class="block text-sm mb-1">Discount Type</label>
+                    <select id="discountType" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                        <option value="none">No Discount</option>
+                        <option value="percentage">Percentage</option>
+                        <option value="fixed">Fixed Amount</option>
+                    </select>
+                </div>
+                <div id="discountValueDiv" class="hidden">
+                    <label class="block text-sm mb-1">Discount Value</label>
+                    <input type="number" id="discountValue" min="0" value="0" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                </div>
+            </div>
+            <div class="bg-gray-700 p-4 rounded-lg mb-4">
+                <div class="text-xl font-bold">Final Amount: ₹<span id="finalAmount">0</span></div>
+                <div class="text-lg">Advance Paid: ₹<%= booking.advanceAmount %></div>
+                <div class="text-2xl font-bold text-green-400 mt-2">Balance Due: ₹<span id="balanceDue">0</span></div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="generateBill(this)" class="flex-1 bg-green-600 hover:bg-green-700 px-4 py-3 rounded-lg font-bold">
+                    <span class="btn-text">Confirm & Generate</span>
+                    <span class="btn-spinner hidden spinner">⚙️</span>
+                </button>
+                <button onclick="closeModal('billModal')" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-3 rounded-lg font-bold">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="addFoodModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50 overflow-y-auto">
+        <div class="bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4 my-8 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4">Add Food Order</h3>
+            <div class="mb-4">
+                <label class="block text-sm mb-2">Filter by Type</label>
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <button onclick="filterAddFood('all')" id="add-filter-all" class="add-filter-btn px-4 py-2 rounded-lg font-semibold bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm">
+                        All
+                    </button>
+                    <button onclick="filterAddFood('veg')" id="add-filter-veg" class="add-filter-btn px-4 py-2 rounded-lg font-semibold bg-gray-700 text-gray-400 hover:bg-green-500/20 hover:text-green-400 text-sm">
+                        🟢 Veg
+                    </button>
+                    <button onclick="filterAddFood('non-veg')" id="add-filter-non-veg" class="add-filter-btn px-4 py-2 rounded-lg font-semibold bg-gray-700 text-gray-400 hover:bg-red-500/20 hover:text-red-400 text-sm">
+                        🔴 Non-Veg
+                    </button>
+                    <button onclick="filterAddFood('beverage')" id="add-filter-beverage" class="add-filter-btn px-4 py-2 rounded-lg font-semibold bg-gray-700 text-gray-400 hover:bg-yellow-500/20 hover:text-yellow-400 text-sm">
+                        🟡 Bev & Desserts
+                    </button>
+                    <button onclick="filterAddFood('other')" id="add-filter-other" class="add-filter-btn px-4 py-2 rounded-lg font-semibold bg-gray-700 text-gray-400 hover:bg-gray-500/20 hover:text-gray-300 text-sm">
+                        ⚪ Others
+                    </button>
+                </div>
+                <label class="block text-sm mb-1">Category</label>
+                <select id="addCategoryFilter" class="w-full bg-gray-700 px-4 py-3 rounded-lg">
+                    <option value="">All Categories</option>
+                    <% categories.forEach(cat => { %>
+                        <option value="<%= cat._id %>"><%= cat.name %></option>
+                    <% }); %>
+                </select>
+            </div>
+            <div id="addMenuItems" class="grid md:grid-cols-2 gap-3 mb-4 max-h-96 overflow-y-auto">
+                <% menuItems.forEach(item => { %>
+                    <div class="add-menu-item bg-gray-700 p-3 rounded-lg" data-category="<%= item.category._id %>" data-food-type="<%= item.foodType || 'veg' %>">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex-1">
+                                <div class="font-bold flex items-center gap-2">
+                                    <% if (item.foodType === 'veg') { %>
+                                        <span class="text-green-400">🟢</span>
+                                    <% } else if (item.foodType === 'non-veg') { %>
+                                        <span class="text-red-400">🔴</span>
+                                    <% } else if (item.foodType === 'beverage') { %>
+                                        <span class="text-yellow-400">🟡</span>
+                                    <% } else if (item.foodType === 'other') { %>
+                                        <span class="text-gray-400">⚪</span>
+                                    <% } %>
+                                    <%= item.name %>
+                                </div>
+                                <div class="text-sm text-gray-300">₹<%= item.price %></div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="changeAddQty('<%= item._id %>', -1)" class="bg-red-600 hover:bg-red-700 w-8 h-8 rounded font-bold">-</button>
+                                <span id="add-qty-<%= item._id %>" class="w-8 text-center font-bold">0</span>
+                                <button type="button" onclick="changeAddQty('<%= item._id %>', 1)" class="bg-green-600 hover:bg-green-700 w-8 h-8 rounded font-bold">+</button>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+            <div class="bg-gray-700 p-4 rounded-lg mb-4">
+                <div class="text-xl font-bold">Total: ₹<span id="addFoodTotal">0</span></div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="submitAddOrder(this)" class="flex-1 bg-green-600 hover:bg-green-700 px-4 py-3 rounded-lg font-bold">
+                    <span class="btn-text">Add Order</span>
+                    <span class="btn-spinner hidden spinner">⚙️</span>
+                </button>
+                <button onclick="closeModal('addFoodModal')" class="flex-1 bg-gray-600 hover:bg-gray-700 px-4 py-3 rounded-lg font-bold">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const menuData = <%- JSON.stringify(menuItems.map(i => ({ id: i._id.toString(), name: i.name, price: i.price, category: i.category._id.toString(), foodType: i.foodType || 'veg' }))) %>;
+        let addFoodItems = {};
+        let currentFoodFilter = 'all';
+        const bookingId = '<%= booking._id %>';
+        const baseRate = <%= booking.baseRatePerHour %>;
+        const extRate = <%= booking.extensionRatePerHour %>;
+        const bookedHours = <%= booking.bookedHours %>;
+        const advance = <%= booking.advanceAmount %>;
+
+        function filterAddFood(type) {
+            currentFoodFilter = type;
+            const allItems = document.querySelectorAll('.add-menu-item');
+            
+            // Update button styles
+            document.querySelectorAll('.add-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'text-white');
+                btn.classList.add('bg-gray-700', 'text-gray-400');
+            });
+            
+            const activeBtn = document.getElementById('add-filter-' + type);
+            activeBtn.classList.remove('bg-gray-700', 'text-gray-400');
+            activeBtn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-orange-600', 'text-white');
+            
+            // Filter items
+            const catFilter = document.getElementById('addCategoryFilter').value;
+            allItems.forEach(item => {
+                const itemType = item.getAttribute('data-food-type');
+                const itemCat = item.getAttribute('data-category');
+                const typeMatch = type === 'all' || itemType === type;
+                const catMatch = !catFilter || itemCat === catFilter;
+                item.style.display = (typeMatch && catMatch) ? 'block' : 'none';
+            });
+        }
+
+        function showEditModal() {
+            // Parse 24h time to set AM/PM dropdowns
+            function set12Hour(hourId, minId, periodId, time24) {
+                const [h, m] = time24.split(':').map(Number);
+                const period = h >= 12 ? 'PM' : 'AM';
+                const hour12 = h % 12 || 12;
+                document.getElementById(hourId).value = hour12;
+                // Snap to nearest option
+                const minEl = document.getElementById(minId);
+                const mins = ['00','15','30','45'];
+                let closest = mins.reduce((a, b) => Math.abs(parseInt(b) - m) < Math.abs(parseInt(a) - m) ? b : a);
+                minEl.value = closest;
+                document.getElementById(periodId).value = period;
+            }
+            set12Hour('editStartHour', 'editStartMin', 'editStartPeriod', '<%= booking.startTime %>');
+            set12Hour('editEndHour', 'editEndMin', 'editEndPeriod', '<%= booking.endTime %>');
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function convert12to24(hour, minute, period) {
+            let h = parseInt(hour);
+            if (period === 'AM' && h === 12) h = 0;
+            if (period === 'PM' && h !== 12) h += 12;
+            return String(h).padStart(2, '0') + ':' + minute;
+        }
+        function showAddFoodModal() { 
+            addFoodItems = {};
+            document.querySelectorAll('[id^="add-qty-"]').forEach(el => el.textContent = '0');
+            document.getElementById('addFoodTotal').textContent = '0';
+            document.getElementById('addFoodModal').classList.remove('hidden'); 
+        }
+        
+        function changeAddQty(itemId, delta) {
+            const item = menuData.find(i => i.id === itemId);
+            if (!addFoodItems[itemId]) addFoodItems[itemId] = { ...item, quantity: 0 };
+            addFoodItems[itemId].quantity = Math.max(0, addFoodItems[itemId].quantity + delta);
+            document.getElementById(`add-qty-${itemId}`).textContent = addFoodItems[itemId].quantity;
+            if (addFoodItems[itemId].quantity === 0) delete addFoodItems[itemId];
+            updateAddFoodTotal();
+        }
+
+        function updateAddFoodTotal() {
+            const total = Object.values(addFoodItems).reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            document.getElementById('addFoodTotal').textContent = total;
+        }
+
+        document.getElementById('addCategoryFilter').addEventListener('change', (e) => {
+            const cat = e.target.value;
+            document.querySelectorAll('.add-menu-item').forEach(item => {
+                const itemType = item.getAttribute('data-food-type');
+                const itemCat = item.getAttribute('data-category');
+                const typeMatch = currentFoodFilter === 'all' || itemType === currentFoodFilter;
+                const catMatch = !cat || itemCat === cat;
+                item.style.display = (typeMatch && catMatch) ? 'block' : 'none';
+            });
+        });
+
+        async function submitAddOrder(btn) {
+            const items = Object.values(addFoodItems).map(item => ({
+                menuItemId: item.id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                status: 'pending'
+            }));
+            
+            if (items.length === 0) {
+                alert('Please select at least one item');
+                return;
+            }
+            
+            // Show loading
+            if (btn) {
+                btn.querySelector('.btn-text').classList.add('hidden');
+                btn.querySelector('.btn-spinner').classList.remove('hidden');
+                btn.disabled = true;
+            }
+            
+            const res = await fetch(`/hall/bookings/${bookingId}/add-order`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items })
+            }).then(r => r.json());
+            
+            if (res.success) {
+                alert('Order added successfully!');
+                location.reload();
+            } else {
+                alert('Error adding order');
+            }
+        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        async function saveEdit(btn) {
+            if (btn) {
+                btn.querySelector('.btn-text').classList.add('hidden');
+                btn.querySelector('.btn-spinner').classList.remove('hidden');
+                btn.disabled = true;
+            }
+            
+            const res = await fetch(`/hall/bookings/${bookingId}/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customerName: document.getElementById('editName').value,
+                    customerPhone: document.getElementById('editPhone').value,
+                    bookingDate: document.getElementById('editDate').value,
+                    startTime: convert12to24(document.getElementById('editStartHour').value, document.getElementById('editStartMin').value, document.getElementById('editStartPeriod').value),
+                    endTime: convert12to24(document.getElementById('editEndHour').value, document.getElementById('editEndMin').value, document.getElementById('editEndPeriod').value),
+                    extensionHours: document.getElementById('editExtHours').value,
+                    decorationCharges: document.getElementById('editDeco').value,
+                    cakeCharges: document.getElementById('editCake').value,
+                    otherCharges: document.getElementById('editOther').value,
+                    advanceAmount: document.getElementById('editAdvance').value,
+                    specialRequirements: document.getElementById('editRequirements').value
+                })
+            }).then(r => r.json());
+            
+            if (res.success) {
+                alert('Booking updated!');
+                location.reload();
+            } else {
+                alert('Error: ' + (res.error || 'Update failed'));
+                if (btn) {
+                    btn.querySelector('.btn-text').classList.remove('hidden');
+                    btn.querySelector('.btn-spinner').classList.add('hidden');
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        async function cancelBooking() {
+            if (!confirm('Cancel this booking? This will also cancel all food orders.')) return;
+            
+            const res = await fetch(`/hall/bookings/${bookingId}/cancel`, { method: 'POST' }).then(r => r.json());
+            if (res.success) {
+                alert('Booking cancelled.');
+                window.location.href = '/waiter/dashboard';
+            } else {
+                alert('Error: ' + (res.error || 'Cancel failed'));
+            }
+        }
+
+        async function sendToKitchen(orderId, btn) {
+            if (!confirm('Send this order to kitchen?')) return;
+            
+            // Show loading
+            if (btn) {
+                btn.querySelector('.btn-text').classList.add('hidden');
+                btn.querySelector('.btn-spinner').classList.remove('hidden');
+                btn.disabled = true;
+            }
+            
+            const res = await fetch(`/hall/orders/${orderId}/send-to-kitchen`, { method: 'POST' }).then(r => r.json());
+            if (res.success) { alert('Order sent to kitchen!'); location.reload(); }
+        }
+
+        async function removeItem(orderId, itemIndex) {
+            if (!confirm('Remove this item from order?')) return;
+            const res = await fetch(`/hall/orders/${orderId}/remove-item/${itemIndex}`, { method: 'POST' }).then(r => r.json());
+            if (res.success) { location.reload(); }
+            else { alert(res.error || 'Cannot remove item'); }
+        }
+
+        function showBillModal() {
+            const extHours = parseInt(document.getElementById('extHours').textContent);
+            const deco = parseInt(document.getElementById('decoAmount').textContent);
+            const cake = parseInt(document.getElementById('cakeAmount').textContent);
+            const other = parseInt(document.getElementById('otherAmount').textContent);
+            const foodTotal = <%= booking.foodOrderIds.reduce((sum, o) => sum + o.totalAmount, 0) %>;
+            
+            const hallCharges = bookedHours * baseRate;
+            const extCharges = extHours * extRate;
+            const subtotal = hallCharges + extCharges + deco + cake + other + foodTotal;
+            
+            document.getElementById('billBreakdown').innerHTML = `
+                <div class="flex justify-between"><span>Hall Charges:</span><span>₹${hallCharges}</span></div>
+                <div class="flex justify-between"><span>Extension:</span><span>₹${extCharges}</span></div>
+                <div class="flex justify-between"><span>Decoration:</span><span>₹${deco}</span></div>
+                <div class="flex justify-between"><span>Cake:</span><span>₹${cake}</span></div>
+                <div class="flex justify-between"><span>Other Charges:</span><span>₹${other}</span></div>
+                <div class="flex justify-between"><span>Food:</span><span>₹${foodTotal}</span></div>
+                <div class="flex justify-between font-bold border-t border-gray-600 pt-2"><span>Subtotal:</span><span>₹${subtotal}</span></div>
+            `;
+            
+            document.getElementById('finalAmount').textContent = subtotal;
+            document.getElementById('balanceDue').textContent = subtotal - advance;
+            document.getElementById('billModal').classList.remove('hidden');
+        }
+
+        document.getElementById('discountType').addEventListener('change', (e) => {
+            document.getElementById('discountValueDiv').classList.toggle('hidden', e.target.value === 'none');
+        });
+
+        async function generateBill(btn) {
+            const discountType = document.getElementById('discountType').value;
+            const discountValue = document.getElementById('discountValue').value;
+            
+            // Show loading
+            if (btn) {
+                btn.querySelector('.btn-text').classList.add('hidden');
+                btn.querySelector('.btn-spinner').classList.remove('hidden');
+                btn.disabled = true;
+            }
+            
+            const res = await fetch(`/hall/bookings/${bookingId}/generate-bill`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ discountType, discountValue })
+            }).then(r => r.json());
+            
+            if (res.success) {
+                alert(`Bill Generated!\nFinal Amount: ₹${res.finalAmount}\nBalance Due: ₹${res.balanceDue}`);
+                window.location.href = '/waiter/dashboard';
+            }
+        }
+        
+        // Add loading overlay to navigation links
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('pageLoadingOverlay').classList.add('hidden');
+            document.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function() {
+                    document.getElementById('pageLoadingOverlay').classList.remove('hidden');
+                });
+            });
+        });
+        window.addEventListener('pageshow', function(e) { if (e.persisted) document.getElementById('pageLoadingOverlay').classList.add('hidden'); });
+    </script>
+</body>
+</html>

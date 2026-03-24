@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Ordering Unavailable</title>
+    <%- include("./partials/favicon") %>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes breathe {
+            0%, 100% { 
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% { 
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+        }
+        .logo-breathe {
+            animation: breathe 2s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full text-center">
+        <!-- Logo -->
+        <div class="mb-6 logo-breathe">
+            <img src="/images/logo.png" alt="<%= branding.cafeName %>" class="w-32 h-32 mx-auto rounded-2xl shadow-2xl">
+        </div>
+        
+        <!-- Main Message -->
+        <div class="mb-8">
+            <div class="text-6xl mb-4 float">🚫</div>
+            <h1 class="text-3xl font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
+                QR Ordering Temporarily Unavailable
+            </h1>
+            <p class="text-xl text-gray-300 mb-2">
+                Please order with our waiter
+            </p>
+            <p class="text-lg text-gray-400">
+                We'll be back soon!
+            </p>
+        </div>
+        
+        <!-- Divider -->
+        <div class="flex items-center gap-3 mb-8">
+            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent"></div>
+            <span class="text-gray-500 text-sm">Meanwhile</span>
+            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-gray-600 to-transparent"></div>
+        </div>
+        
+        <!-- Website Button -->
+        <div class="mb-8">
+            <p class="text-lg text-gray-300 mb-4">
+                Explore our menu and offers online!
+            </p>
+            <a href="<%= branding.websiteFullUrl %>" target="_blank" 
+               class="inline-block w-full bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold py-4 px-8 rounded-xl text-xl shadow-lg transform transition hover:scale-105">
+                🌐 Visit Our Website
+            </a>
+        </div>
+        
+        <!-- Contact Info -->
+        <div class="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+            <h3 class="text-lg font-bold mb-3 text-gray-300">Contact Us</h3>
+            <div class="space-y-2 text-sm text-gray-400">
+                <% if (settings && settings.phone) { %>
+                    <div class="flex items-center justify-center gap-2">
+                        <span>📞</span>
+                        <a href="tel:<%= settings.phone %>" class="text-sky-400 hover:text-sky-300"><%= settings.phone %></a>
+                    </div>
+                <% } %>
+                <% if (settings && settings.openingTime && settings.closingTime) { %>
+                    <div class="flex items-center justify-center gap-2">
+                        <span>🕐</span>
+                        <span><%= settings.openingTime %> - <%= settings.closingTime %></span>
+                    </div>
+                <% } %>
+                <div class="flex items-center justify-center gap-2">
+                    <span>🌐</span>
+                    <span class="text-sky-400"><%= branding.websiteUrl %></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

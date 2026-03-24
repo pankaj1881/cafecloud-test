@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer Feedback - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-10">
+
+<!-- Global Loading Overlay -->
+<div id="pageLoadingOverlay" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+    <div class="text-center">
+        <div class="text-6xl mb-4 spinner">⚙️</div>
+        <div class="text-2xl font-bold text-white">Loading...</div>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-4xl font-bold text-gray-800">📝 Customer Feedback</h1>
+        <a href="/admin/dashboard" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="mb-6 flex flex-wrap gap-2">
+        <a href="/admin/feedback" class="<%= !filter || filter === 'all' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700' %> px-6 py-2 rounded-lg font-semibold hover:bg-blue-500 hover:text-white transition">
+            All (<%= feedbacks.length %>)
+        </a>
+        <a href="/admin/feedback?filter=Feedback" class="<%= filter === 'Feedback' ? 'bg-green-600 text-white' : 'bg-white text-gray-700' %> px-6 py-2 rounded-lg font-semibold hover:bg-green-500 hover:text-white transition">
+            Feedback (<%= feedbacks.filter(f => f.type === 'Feedback').length %>)
+        </a>
+        <a href="/admin/feedback?filter=Complaint" class="<%= filter === 'Complaint' ? 'bg-red-600 text-white' : 'bg-white text-gray-700' %> px-6 py-2 rounded-lg font-semibold hover:bg-red-500 hover:text-white transition">
+            Complaints (<%= feedbacks.filter(f => f.type === 'Complaint').length %>)
+        </a>
+        <a href="/admin/feedback?filter=Suggestion" class="<%= filter === 'Suggestion' ? 'bg-purple-600 text-white' : 'bg-white text-gray-700' %> px-6 py-2 rounded-lg font-semibold hover:bg-purple-500 hover:text-white transition">
+            Suggestions (<%= feedbacks.filter(f => f.type === 'Suggestion').length %>)
+        </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+            <p class="text-gray-600 text-sm font-semibold">Total Feedback</p>
+            <p class="text-3xl font-bold text-gray-800"><%= feedbacks.length %></p>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+            <p class="text-gray-600 text-sm font-semibold">Pending</p>
+            <p class="text-3xl font-bold text-gray-800"><%= feedbacks.filter(f => f.status === 'Pending').length %></p>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+            <p class="text-gray-600 text-sm font-semibold">Reviewed</p>
+            <p class="text-3xl font-bold text-gray-800"><%= feedbacks.filter(f => f.status === 'Reviewed').length %></p>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
+            <p class="text-gray-600 text-sm font-semibold">Avg Rating</p>
+            <p class="text-3xl font-bold text-gray-800">
+                <% const ratedFeedbacks = feedbacks.filter(f => f.rating > 0); %>
+                <%= ratedFeedbacks.length > 0 ? (ratedFeedbacks.reduce((sum, f) => sum + f.rating, 0) / ratedFeedbacks.length).toFixed(1) : '0' %> ⭐
+            </p>
+        </div>
+    </div>
+
+    <!-- Feedback List -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-800 text-white">
+                    <tr>
+                        <th class="px-6 py-4 text-left">Date</th>
+                        <th class="px-6 py-4 text-left">Name</th>
+                        <th class="px-6 py-4 text-left">Phone</th>
+                        <th class="px-6 py-4 text-left">Rating</th>
+                        <th class="px-6 py-4 text-left">Type</th>
+                        <th class="px-6 py-4 text-left">Message</th>
+                        <th class="px-6 py-4 text-left">Status</th>
+                        <th class="px-6 py-4 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <% if (feedbacks.length === 0) { %>
+                        <tr>
+                            <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                                No feedback received yet
+                            </td>
+                        </tr>
+                    <% } else { %>
+                        <% feedbacks.forEach(function(feedback) { %>
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="px-6 py-4 text-sm text-gray-600">
+                                    <%= new Date(feedback.createdAt).toLocaleDateString('en-IN') %>
+                                </td>
+                                <td class="px-6 py-4 font-semibold text-gray-800">
+                                    <%= feedback.name %>
+                                </td>
+                                <td class="px-6 py-4 text-gray-600">
+                                    <%= feedback.phone %>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <% if (feedback.rating > 0) { %>
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold
+                                            <%= feedback.rating >= 4 ? 'bg-green-100 text-green-800' : feedback.rating === 3 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800' %>">
+                                            <%= feedback.rating %> ⭐
+                                        </span>
+                                    <% } else { %>
+                                        <span class="text-gray-400 text-sm">N/A</span>
+                                    <% } %>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                                        <%= feedback.type === 'Feedback' ? 'bg-blue-100 text-blue-800' : feedback.type === 'Complaint' ? 'bg-red-100 text-red-800' : 'bg-purple-100 text-purple-800' %>">
+                                        <%= feedback.type %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-600 max-w-xs">
+                                    <div class="max-h-20 overflow-y-auto">
+                                        <%= feedback.message %>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                                        <%= feedback.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800' %>">
+                                        <%= feedback.status %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-center space-x-2">
+                                    <% if (feedback.status === 'Pending') { %>
+                                        <a href="/admin/feedback/review/<%= feedback._id %>" 
+                                           onclick="showLoading()"
+                                           class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">
+                                            Mark Reviewed
+                                        </a>
+                                    <% } %>
+                                    <a href="/admin/feedback/delete/<%= feedback._id %>" 
+                                       onclick="return confirm('Are you sure you want to delete this feedback?') && showLoading()"
+                                       class="inline-block bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm">
+                                        Delete
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showLoading() {
+        document.getElementById('pageLoadingOverlay').classList.remove('hidden');
+        return true;
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('pageLoadingOverlay').classList.add('hidden');
+        document.querySelectorAll('a[href^="/admin/"]:not([href*="logout"])').forEach(link => {
+            link.addEventListener('click', function() {
+                if (!this.getAttribute('onclick') || !this.getAttribute('onclick').includes('confirm')) {
+                    document.getElementById('pageLoadingOverlay').classList.remove('hidden');
+                }
+            });
+        });
+    });
+    window.addEventListener('pageshow', function(e) { if (e.persisted) document.getElementById('pageLoadingOverlay').classList.add('hidden'); });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= settings?.cafeName || "Cafe" %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+    <!-- ✅ NAVBAR goes here (TOP of body) -->
+    <%- include("partials/navbar") %>
+
+    <!-- HERO -->
+    <div class="relative h-[70vh] bg-cover bg-center"
+         style="background-image: url('<%= settings?.heroImage %>')">
+        <div class="bg-black bg-opacity-50 h-full flex items-center justify-center">
+            <h1 class="text-white text-5xl font-bold">
+                <%= settings?.cafeName %>
+            </h1>
+        </div>
+    </div>
+
+    <!-- ABOUT -->
+    <div class="container mx-auto p-10 text-center">
+        <h2 class="text-3xl font-semibold mb-4">About Us</h2>
+        <p class="text-gray-700 max-w-2xl mx-auto">
+            <%= settings?.description %>
+        </p>
+    </div>
+
+    <!-- GALLERY -->
+    <div class="container mx-auto p-10">
+        <h2 class="text-3xl font-semibold mb-6 text-center">Gallery</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <% settings?.galleryImages?.forEach(img => { %>
+                <img src="<%= img %>" class="rounded shadow">
+            <% }) %>
+        </div>
+    </div>
+
+    <!-- CONTACT -->
+    <div class="bg-gray-800 text-white p-10 text-center">
+        <h2 class="text-3xl mb-4">Contact Us</h2>
+        <p><%= settings?.address %></p>
+        <p><%= settings?.phone %></p>
+
+        <div class="mt-4 space-x-4">
+            <a href="<%= settings?.instagram %>" class="text-pink-400">Instagram</a>
+            <a href="<%= settings?.facebook %>" class="text-blue-400">Facebook</a>
+            <a href="<%= settings?.mapLink %>" class="text-green-400">View on Map</a>
+        </div>
+    </div>
+
+    <!-- ✅ FOOTER goes here (BOTTOM of body) -->
+    <%- include("partials/footer") %>
+
+</body>
+</html>

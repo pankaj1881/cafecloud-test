@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Registration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 flex items-center justify-center h-screen">
+
+<% if (token) { %>
+<form action="/admin/register/<%= token %>" method="POST" class="bg-gray-800 p-8 rounded-lg w-96 text-white">
+    <h2 class="text-2xl mb-2 text-center">Complete Registration</h2>
+    <p class="text-gray-400 text-sm mb-6 text-center">Set your password for <%= email %></p>
+
+    <% if (error) { %>
+        <div class="bg-red-500 text-white p-3 rounded mb-4 text-sm">
+            <%= error %>
+        </div>
+    <% } %>
+
+    <input type="password" name="password" placeholder="Password" minlength="6"
+        class="w-full p-2 mb-4 rounded text-black" required>
+
+    <input type="password" name="confirmPassword" placeholder="Confirm Password" minlength="6"
+        class="w-full p-2 mb-4 rounded text-black" required>
+
+    <button class="w-full bg-orange-500 p-2 rounded hover:bg-orange-600 mb-3">
+        Complete Registration
+    </button>
+
+    <div class="text-center">
+        <a href="/admin" class="text-blue-400 hover:text-blue-300 text-sm">Back to Login</a>
+    </div>
+</form>
+<% } else { %>
+<div class="bg-gray-800 p-8 rounded-lg w-96 text-white text-center">
+    <h2 class="text-2xl mb-4">Invalid Invitation</h2>
+    <% if (error) { %>
+        <div class="bg-red-500 text-white p-3 rounded mb-4 text-sm">
+            <%= error %>
+        </div>
+    <% } else { %>
+        <p class="text-gray-400 mb-4">This invitation link is invalid or has expired.</p>
+    <% } %>
+    <a href="/admin" class="text-blue-400 hover:text-blue-300 text-sm">Back to Login</a>
+</div>
+<% } %>
+
+</body>
+</html>

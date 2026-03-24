@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Feedback - <%= settings?.cafeName %></title>
+    <%- include("./partials/favicon") %>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .star {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .star:hover {
+            transform: scale(1.2);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #38bdf8 0%, #fb923c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-black via-gray-900 to-black text-white min-h-screen">
+
+<%- include("partials/navbar") %>
+
+<div class="container mx-auto px-6 py-16">
+    <div class="max-w-2xl mx-auto">
+        <div class="text-center mb-12">
+            <h1 class="text-5xl md:text-6xl font-extrabold mb-4 gradient-text">Share Your Experience</h1>
+            <div class="w-32 h-1 bg-gradient-to-r from-sky-400 to-orange-500 mx-auto rounded-full mb-6"></div>
+            <p class="text-gray-400 text-lg">Your feedback helps us serve you better. You may win rewards on future orders!</p>
+        </div>
+
+        <div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl p-8 border border-gray-700">
+            <form action="/feedback" method="POST" class="space-y-6">
+                
+                <!-- Name -->
+                <div>
+                    <label class="block text-gray-300 font-semibold mb-2">Your Name *</label>
+                    <input type="text" name="name" required 
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-sky-400 focus:outline-none transition"
+                        placeholder="Enter your name">
+                </div>
+
+                <!-- Phone -->
+                <div>
+                    <label class="block text-gray-300 font-semibold mb-2">Phone Number *</label>
+                    <div class="flex">
+                        <span class="inline-flex items-center px-4 bg-gray-800 border border-r-0 border-gray-700 rounded-l-lg text-gray-400 font-semibold">
+                            +91
+                        </span>
+                        <input type="tel" name="phone" required pattern="[0-9]{10}" maxlength="10" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,10)"
+                            class="flex-1 bg-gray-900 border border-gray-700 rounded-r-lg px-4 py-3 text-white focus:border-sky-400 focus:outline-none transition"
+                            placeholder="10-digit mobile number">
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2 flex items-start space-x-2">
+                        <svg class="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <span>Your phone number is private and will only be used to contact you for rewards or service improvements. It will never be displayed publicly.</span>
+                    </p>
+                </div>
+
+                <!-- Type -->
+                <div>
+                    <label class="block text-gray-300 font-semibold mb-2">Type *</label>
+                    <select name="type" id="feedback-type" required 
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-sky-400 focus:outline-none transition">
+                        <option value="Feedback">Feedback</option>
+                        <option value="Complaint">Complaint</option>
+                        <option value="Suggestion">Suggestion</option>
+                    </select>
+                </div>
+
+                <!-- Rating (Only for Feedback) -->
+                <div id="rating-section">
+                    <label class="block text-gray-300 font-semibold mb-3">Rate Your Experience *</label>
+                    <div class="flex items-center space-x-2">
+                        <div id="star-rating" class="flex space-x-1">
+                            <svg class="star w-10 h-10 text-gray-600" data-rating="1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                            <svg class="star w-10 h-10 text-gray-600" data-rating="2" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                            <svg class="star w-10 h-10 text-gray-600" data-rating="3" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                            <svg class="star w-10 h-10 text-gray-600" data-rating="4" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                            <svg class="star w-10 h-10 text-gray-600" data-rating="5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                            </svg>
+                        </div>
+                        <span id="rating-text" class="text-gray-400 ml-4"></span>
+                    </div>
+                    <input type="hidden" name="rating" id="rating-input">
+                </div>
+
+                <!-- Message -->
+                <div>
+                    <label class="block text-gray-300 font-semibold mb-2">Your Message <span id="message-required"></span></label>
+                    <textarea name="message" id="message-field" rows="5" 
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-sky-400 focus:outline-none transition resize-none"
+                        placeholder="Share your experience with us..."></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" 
+                    class="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-orange-500/50">
+                    Submit Feedback
+                </button>
+
+                <!-- Privacy Note -->
+                <div class="bg-sky-500/10 border border-sky-500/30 rounded-lg p-4 mt-6">
+                    <div class="flex items-start space-x-3">
+                        <svg class="w-6 h-6 text-sky-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div class="text-sm text-gray-300">
+                            <p class="font-semibold text-sky-400 mb-1">Privacy Assurance</p>
+                            <p>Your contact information is kept confidential and used only by the cafe owner to improve service quality and notify you about exclusive rewards. We never share your details with third parties.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<%- include("partials/footer") %>
+
+<script>
+    const stars = document.querySelectorAll('.star');
+    const ratingInput = document.getElementById('rating-input');
+    const ratingText = document.getElementById('rating-text');
+    const feedbackType = document.getElementById('feedback-type');
+    const ratingSection = document.getElementById('rating-section');
+    const messageField = document.getElementById('message-field');
+    const messageRequired = document.getElementById('message-required');
+    let selectedRating = 0;
+
+    const ratingLabels = {
+        1: 'Poor',
+        2: 'Fair',
+        3: 'Good',
+        4: 'Very Good',
+        5: 'Excellent'
+    };
+
+    // Handle type change
+    feedbackType.addEventListener('change', function() {
+        const type = this.value;
+        
+        if (type === 'Feedback') {
+            // Show rating, make it required, message optional
+            ratingSection.style.display = 'block';
+            ratingInput.required = true;
+            messageField.required = false;
+            messageRequired.textContent = '';
+        } else {
+            // Hide rating, make message required
+            ratingSection.style.display = 'none';
+            ratingInput.required = false;
+            ratingInput.value = '0';
+            messageField.required = true;
+            messageRequired.textContent = '*';
+            selectedRating = 0;
+            updateStars();
+        }
+    });
+
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            selectedRating = parseInt(this.dataset.rating);
+            ratingInput.value = selectedRating;
+            updateStars();
+            ratingText.textContent = ratingLabels[selectedRating];
+        });
+
+        star.addEventListener('mouseenter', function() {
+            const rating = parseInt(this.dataset.rating);
+            highlightStars(rating);
+        });
+    });
+
+    document.getElementById('star-rating').addEventListener('mouseleave', function() {
+        updateStars();
+    });
+
+    function highlightStars(rating) {
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.classList.remove('text-gray-600');
+                star.classList.add('text-orange-500');
+            } else {
+                star.classList.remove('text-orange-500');
+                star.classList.add('text-gray-600');
+            }
+        });
+    }
+
+    function updateStars() {
+        highlightStars(selectedRating);
+    }
+</script>
+
+</body>
+</html>
