@@ -619,6 +619,25 @@ router.post('/reject-order', async (req, res) => {
     }
 });
 
+// View Bill (waiter session)
+router.get('/bill/:billId/view', verifyPIN, async (req, res) => {
+    try {
+        const Bill = require('../models/Bill');
+        const SiteSettings = require('../models/SiteSettings');
+        const bill = await Bill.findOne({ billId: req.params.billId })
+            .populate('orderId')
+            .populate({ path: 'hallBookingId', populate: { path: 'hallId foodOrderIds' } });
+        if (!bill) return res.status(404).send('Bill not found');
+        const settings = await SiteSettings.findOne();
+        if (bill.hallBookingId) {
+            return res.render('admin/hall-bill-view', { booking: bill.hallBookingId, settings });
+        }
+        res.render('admin/bill-view', { bill, settings });
+    } catch (error) {
+        res.status(500).send('Error loading bill');
+    }
+});
+
 
 // Toggle QR ordering
 router.post('/toggle-qr-ordering', verifyPIN, async (req, res) => {
