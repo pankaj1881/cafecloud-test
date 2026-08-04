@@ -117,7 +117,7 @@
                                     </td>
                                     <td class="px-2 md:px-4 py-2 md:py-3">
                                         <% if (billMap['hall_' + booking._id.toString()]) { %>
-                                            <a href="/admin/bill/<%= billMap['hall_' + booking._id.toString()] %>/view" target="_blank"
+                                            <a href="/waiter/bill/<%= billMap['hall_' + booking._id.toString()] %>/view" target="_blank"
                                                class="bg-blue-600 hover:bg-blue-700 text-white px-2 md:px-3 py-1 rounded text-xs md:text-sm font-bold">
                                                 View Bill
                                             </a>
@@ -165,7 +165,7 @@
                                     </td>
                                     <td class="px-2 md:px-4 py-2 md:py-3">
                                         <% if (billMap[order._id.toString()]) { %>
-                                            <a href="/admin/bill/<%= billMap[order._id.toString()] %>/view"
+                                            <a href="/waiter/bill/<%= billMap[order._id.toString()] %>/view" target="_blank"
                                                class="bg-blue-600 hover:bg-blue-700 text-white px-2 md:px-3 py-1 rounded text-xs md:text-sm font-bold">
                                                 View Bill
                                             </a>
