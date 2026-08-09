@@ -3,10 +3,10 @@
 
 module.exports = {
     // Website URL (shown on QR codes and customer pages)
-    websiteUrl: 'www.cafe-cloud.in',
+    websiteUrl: 'www.mycafecloud.in',
     
     // Full website URL with protocol (for links)
-    websiteFullUrl: 'https://www.cafe-cloud.in',
+    websiteFullUrl: 'https://www.mycafecloud.in',
     
     // Cafe Name
     cafeName: 'Cafe Cloud',
@@ -16,8 +16,8 @@ module.exports = {
     
     // Review request text (shown on QR codes)
     reviewText: {
-        line1: '⭐ Please visit our',
-        line2: 'website & review us'
+        line1: ' Please visit our',
+        line2: 'website and review us'
     },
     
     // Social media links (optional)
