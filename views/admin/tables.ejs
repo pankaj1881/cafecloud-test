@@ -150,8 +150,8 @@
                 
                 <!-- Review Request -->
                 <div class="mb-3">
-                    <p class="text-sm text-gray-600">⭐ <%= branding.reviewText.line1 %> <%= branding.reviewText.line2 %></p>
-                    <p class="text-base font-semibold text-blue-600"><%= branding.websiteUrl %></p>
+                    <p class="text-sm text-gray-600"><%- branding.reviewText.line1 %> <%- branding.reviewText.line2 %></p>
+                    <p class="text-base font-semibold text-blue-600"><%- branding.websiteUrl %></p>
                 </div>
                 
                 <!-- URL (visible on screen only) -->
@@ -179,9 +179,9 @@
     <script>
         // Branding config from server
         const BRANDING_CONFIG = {
-            websiteUrl: '<%= branding.websiteUrl %>',
-            reviewLine1: '<%= branding.reviewText.line1 %>',
-            reviewLine2: '<%= branding.reviewText.line2 %>'
+            websiteUrl: '<%- branding.websiteUrl %>',
+            reviewLine1: '<%- branding.reviewText.line1 %>',
+            reviewLine2: '<%- branding.reviewText.line2 %>'
         };
         
         function showTab(tab) {
