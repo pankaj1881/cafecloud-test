@@ -81,7 +81,7 @@ router.post('/ready/:orderId/:itemIndex', async (req, res) => {
         order.items[req.params.itemIndex].status = 'ready';
         
         // Check if all items are ready
-        const allReady = order.items.every(item => item.status === 'ready');
+        const allReady = order.items.every(item => ['ready', 'served'].includes(item.status));
         if (allReady) {
             // For parcel orders, mark as served (ready for billing) automatically
             if (order.orderType === 'parcel') {
