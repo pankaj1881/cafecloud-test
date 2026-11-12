@@ -5,6 +5,23 @@ const MenuItem = require('../models/MenuItem');
 const Order = require('../models/Order');
 const Table = require('../models/Table');
 
+// Never trust customer-provided names or prices. Resolve every line from the
+// current menu and calculate totals using database values.
+async function resolveCustomerItems(items) {
+    if (!Array.isArray(items) || items.length === 0 || items.length > 50) throw new Error('Invalid order items');
+    const quantities = new Map();
+    for (const line of items) {
+        const id = String(line.menuItemId || '');
+        const quantity = Number(line.quantity);
+        if (!/^[a-f\d]{24}$/i.test(id) || !Number.isInteger(quantity) || quantity < 1 || quantity > 20) throw new Error('Invalid item or quantity');
+        quantities.set(id, (quantities.get(id) || 0) + quantity);
+        if (quantities.get(id) > 20) throw new Error('Maximum quantity is 20 per item');
+    }
+    const menuItems = await MenuItem.find({ _id: { $in: [...quantities.keys()] }, isAvailable: true });
+    if (menuItems.length !== quantities.size) throw new Error('One or more items are unavailable');
+    return menuItems.map(item => ({ menuItemId: item._id, name: item.name, price: item.price, quantity: quantities.get(item._id.toString()), status: 'pending', approved: false }));
+}
+
 
 // Customer order page (from QR scan)
 router.get('/order', async (req, res) => {
@@ -204,6 +221,9 @@ router.post('/api/customer-order', async (req, res) => {
         if (!tableNumber || !items || items.length === 0) {
             return res.json({ success: false, error: 'Invalid order data' });
         }
+        let verifiedItems;
+        try { verifiedItems = await resolveCustomerItems(items); }
+        catch (error) { return res.json({ success: false, error: error.message }); }
        
         // If updating existing order (same customer with token)
         if (orderId && sessionToken) {
@@ -215,16 +235,7 @@ router.post('/api/customer-order', async (req, res) => {
                 }
                
                 // Add new items to existing order (not approved yet)
-                items.forEach(item => {
-                    order.items.push({
-                        menuItemId: item.menuItemId,
-                        name: item.name,
-                        price: item.price,
-                        quantity: item.quantity,
-                        status: 'pending',
-                        approved: false
-                    });
-                });
+                verifiedItems.forEach(item => order.items.push(item));
                 order.totalAmount = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                 // Reset approval status so waiter sees new items
                 order.approvalStatus = 'pending';
@@ -263,7 +274,7 @@ router.post('/api/customer-order', async (req, res) => {
         const newSessionToken = 'SESSION_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
        
         // Calculate total
-        const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const totalAmount = verifiedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
        
         // Generate order ID
         const newOrderId = 'ORD' + Date.now();
@@ -273,14 +284,7 @@ router.post('/api/customer-order', async (req, res) => {
             orderId: newOrderId,
             orderType: 'dine-in',
             tableNumber,
-            items: items.map(item => ({
-                menuItemId: item.menuItemId,
-                name: item.name,
-                price: item.price,
-                quantity: item.quantity,
-                status: 'pending',
-                approved: false
-            })),
+            items: verifiedItems,
             totalAmount,
             status: 'pending',
             customerPlaced: true,
