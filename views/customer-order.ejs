@@ -165,7 +165,7 @@
     <div class="px-4 pt-3">
         <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
-            <input id="menuSearch" oninput="searchMenu(this.value)" type="search" placeholder="Search food or drinks…" class="w-full rounded-2xl bg-gray-100 dark:bg-d-card border border-gray-200 dark:border-d-surface py-2.5 pl-10 pr-4 text-sm font-bold outline-none focus:border-coral-400 focus:ring-2 focus:ring-coral-100 dark:focus:ring-coral-500/20">
+            <input id="menuSearch" oninput="searchMenu(this.value)" type="search" autocomplete="off" placeholder="Search item, category or description…" class="w-full rounded-2xl bg-gray-100 dark:bg-d-card border border-gray-200 dark:border-d-surface py-2.5 pl-10 pr-4 text-sm font-bold outline-none focus:border-coral-400 focus:ring-2 focus:ring-coral-100 dark:focus:ring-coral-500/20">
         </div>
     </div>
     <!-- Food Type Filters -->
@@ -216,10 +216,11 @@
     <div id="menuGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <% menuItems.forEach(item => { %>
             <div class="menu-item bg-white dark:bg-d-card rounded-2xl p-4 card-shadow border border-gray-100/80 dark:border-d-surface" 
-                 data-category="<%= item.category._id %>" 
+                 data-category="<%= item.category ? item.category._id : '' %>" 
                  data-food-type="<%= item.foodType || 'veg' %>"
                  data-id="<%= item._id %>" 
                  data-name="<%= item.name %>" 
+                 data-search="<%= [item.name, item.description || '', item.category ? item.category.name : '', item.foodType || 'veg', item.foodType === 'non-veg' ? 'non veg chicken meat' : '', item.foodType === 'beverage' ? 'beverages drink drinks' : ''].join(' ') %>"
                  data-price="<%= item.price %>">
                 <div class="flex justify-between items-center gap-3">
                     <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-d-surface overflow-hidden flex-shrink-0 flex items-center justify-center">
@@ -253,6 +254,11 @@
                 </div>
             </div>
         <% }); %>
+    </div>
+    <div id="searchEmpty" class="hidden py-16 text-center">
+        <div class="text-4xl">🔍</div>
+        <p class="mt-3 font-black text-gray-700 dark:text-gray-200">No matching items</p>
+        <p class="mt-1 text-sm text-gray-400">Try a shorter item or category name.</p>
     </div>
 </div>
 
@@ -373,6 +379,9 @@ let approvedItems = {}; // Track approved items with their approved quantities
 let currentFoodTypeFilter = 'all';
 let currentCategoryFilter = '';
 let currentSearch = '';
+let currentOrderStatus = '<%= existingOrder ? existingOrder.status : '' %>';
+let statusRequestInFlight = false;
+let terminalStatusHandled = false;
 const escapeHtml = value => String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
 
 
@@ -531,11 +540,17 @@ function updateCartModal() {
     });
     newItemsFromMenu.forEach(item => { newItemsTotal += item.price * item.quantity; });
     
+    const approvedStatusText = currentOrderStatus === 'ready'
+        ? '✅ Ready — Please wait for service'
+        : currentOrderStatus === 'served'
+            ? '✅ Served'
+            : '✅ Approved — Being Prepared';
+
     // Approved items
     if (approvedCartItems.length > 0) {
         html += `<div class="mb-4">
             <div class="flex items-center gap-2 mb-2">
-                <span class="text-xs font-black text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/20 px-2.5 py-1 rounded-full">✅ Approved — Being Prepared</span>
+                <span class="text-xs font-black text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/20 px-2.5 py-1 rounded-full">${approvedStatusText}</span>
             </div>`;
         approvedCartItems.forEach(item => {
             html += `
@@ -641,7 +656,7 @@ function updateCartModal() {
     } else if (approvedTotal > 0 || pendingTotal > 0) {
         footerHTML += `
             <div class="bg-teal-50 dark:bg-teal-500/20 rounded-2xl p-3 text-center">
-                <p class="text-teal-600 dark:text-teal-400 font-bold text-sm">🔄 Refresh to update status</p>
+                <p class="text-teal-600 dark:text-teal-400 font-bold text-sm">📡 Status updates automatically</p>
                 <p class="text-xs text-gray-400 dark:text-d-muted mt-1">Add more items to place another order</p>
             </div>`;
     }
@@ -691,44 +706,60 @@ function clearCart() {
 }
 
 
+function applyOrderSnapshot(result) {
+    if (!Array.isArray(result.items)) return;
+    const itemMap = {};
+    const nextApprovedItems = {};
+    result.items.forEach(item => {
+        const id = String(item.menuItemId);
+        if (!itemMap[id]) {
+            itemMap[id] = { id, name: item.name, price: item.price, quantity: 0 };
+        }
+        itemMap[id].quantity += Number(item.quantity) || 0;
+        if (item.approved) {
+            nextApprovedItems[id] = (nextApprovedItems[id] || 0) + (Number(item.quantity) || 0);
+        }
+    });
+    cart = Object.values(itemMap);
+    approvedItems = nextApprovedItems;
+    currentOrderStatus = result.status || currentOrderStatus;
+    updateCartModal();
+    updateCartBadge();
+}
+
+async function syncCustomerOrderStatus() {
+    if (!existingOrderId || !sessionToken || statusRequestInFlight || terminalStatusHandled) return;
+    statusRequestInFlight = true;
+    try {
+        const response = await fetch('/api/check-order-status?orderId=' + encodeURIComponent(existingOrderId) + '&token=' + encodeURIComponent(sessionToken), { cache: 'no-store' });
+        const result = await response.json();
+        if (!result.success) return;
+        if (result.cancelled || result.rejected) {
+            terminalStatusHandled = true;
+            localStorage.removeItem('tableSession_' + tableNumber);
+            const message = result.cancelled
+                ? 'Your order was cancelled by staff.\n\nThe table is now available for a new order.'
+                : 'Your order was rejected by the waiter.\nReason: ' + (result.rejectionReason || 'Not specified');
+            alert(message);
+            location.assign('/order?table=' + tableNumber);
+            return;
+        }
+        applyOrderSnapshot(result);
+        if (result.status === 'served' || result.status === 'billed') {
+            terminalStatusHandled = true;
+            location.assign('/bill?table=' + tableNumber + '&token=' + encodeURIComponent(sessionToken));
+        }
+    } catch (error) {
+        console.error('Error updating order status:', error);
+    } finally {
+        statusRequestInFlight = false;
+    }
+}
+
 // Toggle cart
 async function toggleCart() {
     // Check if order is finished, rejected, or cancelled before opening cart
-    if (existingOrderId && sessionToken) {
-        try {
-            const response = await fetch('/api/check-order-status?orderId=' + encodeURIComponent(existingOrderId) + '&token=' + encodeURIComponent(sessionToken));
-            const result = await response.json();
-           
-            if (result.success) {
-                // If order was cancelled, show message and lock cart
-                if (result.cancelled) {
-                    alert('Your order was cancelled by staff.\n\nThe table is now available for new orders.');
-                    // Clear session and reload without token
-                    localStorage.removeItem('tableSession_' + tableNumber);
-                    location.assign('/order?table=' + tableNumber);
-                    return;
-                }
-                
-                // If order was rejected, clear session and allow new order
-                if (result.rejected) {
-                    alert('Your previous order was rejected by waiter.\nReason: ' + (result.rejectionReason || 'Not specified') + '\n\nYou can place a new order now.');
-                    // Clear session and reload without token
-                    localStorage.removeItem('tableSession_' + tableNumber);
-                    location.assign('/order?table=' + tableNumber);
-                    return;
-                }
-                
-                // If order is served/billed (completed successfully)
-                if (result.status === 'served' || result.status === 'billed') {
-                    alert('Order is already finished! Redirecting to bill...');
-                    location.assign('/bill?table=' + tableNumber + '&token=' + encodeURIComponent(sessionToken));
-                    return;
-                }
-            }
-        } catch (error) {
-            console.error('Error checking order status:', error);
-        }
-    }
+    await syncCustomerOrderStatus();
    
     // Update cart contents before showing
     updateCartModal();
@@ -961,16 +992,34 @@ function filterCategory(categoryId, clickedBtn) {
 
 // Apply both filters
 function applyFilters() {
+    let visibleCount = 0;
     document.querySelectorAll('.menu-item').forEach(item => {
-        const categoryMatch = !currentCategoryFilter || item.dataset.category === currentCategoryFilter;
-        const foodTypeMatch = currentFoodTypeFilter === 'all' || item.dataset.foodType === currentFoodTypeFilter;
-        const searchMatch = !currentSearch || item.dataset.name.toLowerCase().includes(currentSearch);
-        item.style.display = (categoryMatch && foodTypeMatch && searchMatch) ? 'block' : 'none';
+        // Text search is intentionally global. A previously selected chip should
+        // never hide an item that matches what the customer is typing.
+        const categoryMatch = currentSearch || !currentCategoryFilter || item.dataset.category === currentCategoryFilter;
+        const foodTypeMatch = currentSearch || currentFoodTypeFilter === 'all' || item.dataset.foodType === currentFoodTypeFilter;
+        const searchableText = normalizeSearch(item.dataset.search || item.dataset.name || '');
+        const searchMatch = !currentSearch || currentSearch.split(' ').every(term => searchableText.includes(term));
+        const isVisible = Boolean(categoryMatch && foodTypeMatch && searchMatch);
+        item.style.display = isVisible ? 'block' : 'none';
+        if (isVisible) visibleCount += 1;
     });
+    const emptyState = document.getElementById('searchEmpty');
+    if (emptyState) emptyState.classList.toggle('hidden', visibleCount > 0);
+}
+
+function normalizeSearch(value) {
+    return String(value)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+        .replace(/\s+/g, ' ');
 }
 
 function searchMenu(value) {
-    currentSearch = value.trim().toLowerCase();
+    currentSearch = normalizeSearch(value);
     applyFilters();
 }
 
@@ -1053,6 +1102,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // If keepCartOpen flag is set, open the cart automatically
     if (keepCartOpen === 'true') {
         document.getElementById('cartModal').classList.remove('hidden');
+    }
+
+    if (existingOrderId && sessionToken) {
+        syncCustomerOrderStatus();
+        window.setInterval(syncCustomerOrderStatus, 5000);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') syncCustomerOrderStatus();
+        });
     }
 });
 </script>
