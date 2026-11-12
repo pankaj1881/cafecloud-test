@@ -18,6 +18,7 @@ const { menuStorage, galleryStorage, uploadToAzure, deleteFromAzure, deleteFromC
 const { getImageUrl } = require('../utils/imageHelper');
 const { CGST_RATE, SGST_RATE } = require('../config/gst');
 const { getStartOfDay, getEndOfDay, getStartOfYesterday, getEndOfYesterday } = require('../config/timezone');
+const branding = require('../config/branding');
 
 // Auth middleware for API
 const apiAuth = (req, res, next) => {
@@ -251,7 +252,11 @@ router.get('/admin/operations-setup', apiAdminAuth, async (req, res) => {
         ]);
         res.json({ success: true, data: {
             tables, halls,
-            hallBookingSettings: settings?.hallBookingSettings || { minimumBookingHours: 2, bufferTimeMinutes: 30 }
+            hallBookingSettings: settings?.hallBookingSettings || { minimumBookingHours: 2, bufferTimeMinutes: 30 },
+            branding: {
+                websiteUrl: branding.websiteUrl,
+                reviewText: branding.reviewText
+            }
         }});
     } catch (error) {
         res.status(500).json({ success: false, error: 'Could not load tables and halls' });
