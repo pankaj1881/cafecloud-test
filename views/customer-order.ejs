@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -162,6 +162,12 @@
 
 <!-- Filters -->
 <div class="sticky top-[58px] z-40 bg-white/90 dark:bg-d-bg/90 backdrop-blur-lg border-b border-gray-100 dark:border-d-surface">
+    <div class="px-4 pt-3">
+        <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
+            <input id="menuSearch" oninput="searchMenu(this.value)" type="search" placeholder="Search food or drinks…" class="w-full rounded-2xl bg-gray-100 dark:bg-d-card border border-gray-200 dark:border-d-surface py-2.5 pl-10 pr-4 text-sm font-bold outline-none focus:border-coral-400 focus:ring-2 focus:ring-coral-100 dark:focus:ring-coral-500/20">
+        </div>
+    </div>
     <!-- Food Type Filters -->
     <div class="px-4 pt-3 pb-1.5">
         <div class="flex gap-2 overflow-x-auto filter-scroll pb-1">
@@ -201,6 +207,12 @@
 
 <!-- Menu Items -->
 <div class="px-4 pt-4 pb-32">
+    <% if (existingOrder) { %>
+        <div class="mb-4 rounded-2xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/20 p-4">
+            <div class="flex justify-between items-center"><div><p class="text-xs font-black text-teal-600 uppercase tracking-wide">Order <%= existingOrder.orderId %></p><p class="font-black mt-1">Your order is active</p></div><button onclick="toggleCart()" class="text-xs font-black text-teal-600 bg-white dark:bg-d-card px-3 py-2 rounded-xl">View status</button></div>
+            <div class="flex items-center gap-1.5 mt-3 text-[10px] font-bold text-gray-400"><span class="text-teal-600">Ordered</span><span>→</span><span class="<%= existingOrder.approvalStatus === 'approved' ? 'text-teal-600' : '' %>">Approved</span><span>→</span><span class="<%= ['preparing','ready','served'].includes(existingOrder.status) ? 'text-teal-600' : '' %>">Preparing</span><span>→</span><span class="<%= ['ready','served'].includes(existingOrder.status) ? 'text-teal-600' : '' %>">Ready</span></div>
+        </div>
+    <% } %>
     <div id="menuGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <% menuItems.forEach(item => { %>
             <div class="menu-item bg-white dark:bg-d-card rounded-2xl p-4 card-shadow border border-gray-100/80 dark:border-d-surface" 
@@ -210,6 +222,9 @@
                  data-name="<%= item.name %>" 
                  data-price="<%= item.price %>">
                 <div class="flex justify-between items-center gap-3">
+                    <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-d-surface overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        <% if (item.image) { %><img src="<%= getImageUrl(item.image) %>" alt="<%= item.name %>" class="w-full h-full object-cover" loading="lazy"><% } else { %><span class="text-2xl">🍴</span><% } %>
+                    </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 mb-1">
                             <% if (item.foodType === 'veg') { %>
@@ -223,7 +238,8 @@
                             <% } %>
                             <h3 class="text-[15px] font-extrabold text-gray-800 dark:text-gray-100 truncate"><%= item.name %></h3>
                         </div>
-                        <p class="text-lg font-black text-coral-500 ml-6">₹<%= item.price %></p>
+                        <% if (item.description) { %><p class="text-[11px] text-gray-400 line-clamp-1 mt-0.5"><%= item.description %></p><% } %>
+                        <p class="text-lg font-black text-coral-500 mt-1">₹<%= item.price %></p>
                     </div>
                     <div class="flex items-center gap-1 flex-shrink-0 bg-gray-50 dark:bg-d-surface rounded-2xl p-1">
                         <button onclick="updateQuantity('<%= item._id %>', -1)" class="w-9 h-9 rounded-xl bg-white dark:bg-d-card text-coral-500 font-black text-lg card-shadow flex items-center justify-center btn-bounce">
@@ -239,6 +255,12 @@
         <% }); %>
     </div>
 </div>
+
+<!-- Persistent cart summary -->
+<button id="cartBar" onclick="toggleCart()" class="hidden fixed bottom-4 left-4 right-4 z-40 max-w-lg mx-auto bg-gray-950 dark:bg-white text-white dark:text-gray-950 rounded-2xl px-4 py-3.5 shadow-2xl items-center justify-between btn-bounce">
+    <span><span id="cartBarCount" class="font-black">0 items</span><span id="cartBarTotal" class="ml-2 text-coral-400 font-black">₹0</span></span>
+    <span class="font-black text-sm">View Cart →</span>
+</button>
 
 
 <!-- Cart Modal -->
@@ -350,6 +372,8 @@ let cart = [];
 let approvedItems = {}; // Track approved items with their approved quantities
 let currentFoodTypeFilter = 'all';
 let currentCategoryFilter = '';
+let currentSearch = '';
+const escapeHtml = value => String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
 
 
 // Load existing order items if any - but don't show them in menu quantities
@@ -361,7 +385,7 @@ let currentCategoryFilter = '';
             price: item.price,
             quantity: item.quantity,
             approved: item.approved || false
-        }))) %>;
+        }))).replace(/</g, '\\u003c') %>;
         
         // Consolidate items by menuItemId (sum quantities)
         const itemMap = {};
@@ -439,6 +463,15 @@ function updateCartBadge() {
     } else {
         badge.classList.add('hidden');
     }
+    const existingCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const existingTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const newTotal = [...document.querySelectorAll('.menu-item')].reduce((sum, menuItem) => sum + (parseInt(document.getElementById('qty-' + menuItem.dataset.id)?.textContent) || 0) * parseFloat(menuItem.dataset.price), 0);
+    const bar = document.getElementById('cartBar');
+    const totalCount = existingCount + newItemsCount;
+    document.getElementById('cartBarCount').textContent = totalCount + (totalCount === 1 ? ' item' : ' items');
+    document.getElementById('cartBarTotal').textContent = '₹' + (existingTotal + newTotal);
+    bar.classList.toggle('hidden', totalCount === 0);
+    bar.classList.toggle('flex', totalCount > 0);
 }
 
 // Update UI
@@ -509,7 +542,7 @@ function updateCartModal() {
             <div class="bg-teal-50/60 dark:bg-teal-500/10 rounded-xl p-3 mb-2 border border-teal-200/60 dark:border-teal-500/30">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100">${item.name}</h4>
+                        <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100">${escapeHtml(item.name)}</h4>
                         <p class="text-xs text-teal-600 dark:text-teal-400 font-semibold mt-0.5">₹${item.price} × ${item.displayQty}</p>
                     </div>
                     <div class="text-right">
@@ -533,7 +566,7 @@ function updateCartModal() {
             <div class="bg-amber-50/60 dark:bg-amber-500/10 rounded-xl p-3 mb-2 border border-amber-200/60 dark:border-amber-500/30">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100">${item.name}</h4>
+                        <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100">${escapeHtml(item.name)}</h4>
                         <p class="text-xs text-amber-600 dark:text-amber-400 font-semibold mt-0.5">₹${item.price} × ${item.displayQty}</p>
                     </div>
                     <div class="text-right">
@@ -557,7 +590,7 @@ function updateCartModal() {
             <div class="bg-white dark:bg-d-card rounded-xl p-3 mb-2 border border-gray-200 dark:border-d-surface card-shadow">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100">${item.name}</h4>
+                        <h4 class="font-bold text-sm text-gray-800 dark:text-gray-100">${escapeHtml(item.name)}</h4>
                         <p class="text-xs text-coral-500 font-semibold mt-0.5">₹${item.price} × ${item.quantity}</p>
                     </div>
                     <div class="flex items-center gap-2">
@@ -840,7 +873,7 @@ async function confirmSubmit(btn) {
         
         const requestBody = {
             tableNumber: tableNumber,
-            items: itemsToSubmit,
+            items: itemsToSubmit.map(item => ({ menuItemId: item.menuItemId, quantity: item.quantity })),
             sessionToken: sessionToken || null,
             orderId: existingOrderId || null
         };
@@ -931,8 +964,14 @@ function applyFilters() {
     document.querySelectorAll('.menu-item').forEach(item => {
         const categoryMatch = !currentCategoryFilter || item.dataset.category === currentCategoryFilter;
         const foodTypeMatch = currentFoodTypeFilter === 'all' || item.dataset.foodType === currentFoodTypeFilter;
-        item.style.display = (categoryMatch && foodTypeMatch) ? 'block' : 'none';
+        const searchMatch = !currentSearch || item.dataset.name.toLowerCase().includes(currentSearch);
+        item.style.display = (categoryMatch && foodTypeMatch && searchMatch) ? 'block' : 'none';
     });
+}
+
+function searchMenu(value) {
+    currentSearch = value.trim().toLowerCase();
+    applyFilters();
 }
 
 
@@ -1009,6 +1048,7 @@ document.addEventListener('DOMContentLoaded', function() {
    
     // Initialize cart modal on page load
     updateCartModal();
+    updateCartBadge();
     
     // If keepCartOpen flag is set, open the cart automatically
     if (keepCartOpen === 'true') {
