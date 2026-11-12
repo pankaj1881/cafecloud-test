@@ -410,7 +410,10 @@ router.get('/admin/feedback', apiAdminAuth, async (req, res) => {
         const feedbacks = await Feedback.find().sort({ createdAt: -1 }).lean();
         const rated = feedbacks.filter(item => item.rating > 0);
         res.json({ success: true, data: { feedbacks, stats: { total: feedbacks.length, pending: feedbacks.filter(item => item.status === 'Pending').length, reviewed: feedbacks.filter(item => item.status === 'Reviewed').length, averageRating: rated.length ? rated.reduce((sum, item) => sum + item.rating, 0) / rated.length : 0 } } });
-    } catch (error) { res.status(500).json({ success: false, error: 'Could not load feedback' }); }
+    } catch (error) {
+        console.error('Admin feedback API error:', error);
+        res.status(500).json({ success: false, error: 'Could not load feedback' });
+    }
 });
 
 router.patch('/admin/feedback/:id/review', apiAdminAuth, async (req, res) => {
