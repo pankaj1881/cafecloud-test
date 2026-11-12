@@ -205,7 +205,21 @@ router.get('/api/check-order-status', async (req, res) => {
             });
         }
        
-        res.json({ success: true, status: order.status, rejected: false, cancelled: false });
+        res.json({
+            success: true,
+            status: order.status,
+            approvalStatus: order.approvalStatus,
+            rejected: false,
+            cancelled: false,
+            items: order.items.map(item => ({
+                menuItemId: item.menuItemId,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                approved: Boolean(item.approved),
+                status: item.status
+            }))
+        });
     } catch (error) {
         console.error('Error checking order status:', error);
         res.json({ success: false, error: 'Error checking order status' });
