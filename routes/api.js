@@ -10,6 +10,8 @@ const Hall = require('../models/Hall');
 const HallBooking = require('../models/HallBooking');
 const SiteSettings = require('../models/SiteSettings');
 const Admin = require('../models/Admin');
+const Feedback = require('../models/Feedback');
+const DeliveryPartner = require('../models/DeliveryPartner');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const { menuStorage, galleryStorage, uploadToAzure, deleteFromAzure, deleteFromCloudinary, STORAGE_PROVIDER } = require('../utils/storage');
@@ -417,7 +419,7 @@ router.get('/admin/feedback', apiAdminAuth, async (req, res) => {
 });
 
 router.patch('/admin/feedback/:id/review', apiAdminAuth, async (req, res) => {
-    const feedback = await Feedback.findByIdAndUpdate(req.params.id, { status: 'Reviewed' }, { new: true });
+    const feedback = await Feedback.findByIdAndUpdate(req.params.id, { status: 'Reviewed' }, { returnDocument: 'after' });
     if (!feedback) return res.status(404).json({ success: false, error: 'Feedback not found' });
     res.json({ success: true, data: feedback });
 });
