@@ -578,7 +578,8 @@ router.get('/parcels', apiAuth, async (req, res) => {
 router.get('/menu', apiAuth, async (req, res) => {
     try {
         const categories = await Category.find();
-        const menuItems = await MenuItem.find({ isAvailable: true }).populate('category');
+        const items = await MenuItem.find({ isAvailable: true }).populate('category');
+        const menuItems = items.map(item => ({ ...item.toObject(), imageUrl: getImageUrl(item.image) }));
         res.json({ success: true, data: { categories, menuItems } });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
